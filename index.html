@@ -1,0 +1,7400 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>WAKALA — Kitabu cha Mtaji | Goden Tech</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#f4f7f5;
+  --card:#ffffff;
+  --card2:#f8faf9;
+  --text:#17231d;
+  --muted:#718078;
+  --green:#087443;
+  --green2:#0b8a50;
+  --green-dark:#075d36;
+  --gold:#c99732;
+  --danger:#d63c3c;
+  --orange:#e68a20;
+  --yellow:#d7a51f;
+  --blue:#3178d4;
+  --border:#e4ebe7;
+  --shadow:0 10px 30px rgba(21,55,39,.08);
+  --radius:22px;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+}
+
+button,
+input,
+select,
+textarea{
+  font-family:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.hidden{
+  display:none!important;
+}
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+#authScreen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(circle at top right,rgba(8,116,67,.18),transparent 35%),
+    radial-gradient(circle at bottom left,rgba(201,151,50,.14),transparent 35%),
+    var(--bg);
+}
+
+.auth-card{
+  width:100%;
+  max-width:430px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:30px;
+  padding:28px 22px 20px;
+  box-shadow:0 25px 70px rgba(17,45,32,.13);
+}
+
+.logo-box{
+  width:76px;
+  height:76px;
+  margin:0 auto 15px;
+  border-radius:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:30px;
+  font-weight:800;
+  background:linear-gradient(145deg,var(--green2),var(--green-dark));
+  box-shadow:0 12px 25px rgba(8,116,67,.25);
+}
+
+.auth-title{
+  text-align:center;
+  font-family:"Playfair Display",serif;
+  font-size:27px;
+  margin:0;
+}
+
+.auth-subtitle{
+  text-align:center;
+  color:var(--muted);
+  margin:7px 0 25px;
+  font-size:13px;
+}
+
+.field{
+  margin-bottom:15px;
+}
+
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  color:var(--muted);
+  margin-bottom:7px;
+}
+
+.input,
+select,
+textarea{
+  width:100%;
+  border:1px solid var(--border);
+  outline:none;
+  background:var(--card2);
+  color:var(--text);
+  border-radius:14px;
+  padding:13px 14px;
+  font-size:14px;
+  transition:.2s;
+}
+
+textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
+.input:focus,
+select:focus,
+textarea:focus{
+  border-color:var(--green2);
+  background:white;
+  box-shadow:0 0 0 4px rgba(8,116,67,.08);
+}
+
+.primary-btn{
+  width:100%;
+  border:0;
+  border-radius:15px;
+  padding:14px;
+  color:white;
+  background:linear-gradient(135deg,var(--green2),var(--green-dark));
+  font-size:14px;
+  font-weight:800;
+  box-shadow:0 9px 20px rgba(8,116,67,.20);
+}
+
+.secondary-btn{
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  border-radius:13px;
+  padding:11px 14px;
+  font-weight:700;
+}
+
+.auth-switch{
+  text-align:center;
+  margin-top:18px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.auth-switch button{
+  border:0;
+  background:none;
+  color:var(--green);
+  font-weight:800;
+}
+
+.auth-footer{
+  margin-top:22px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.7;
+}
+
+.auth-footer strong{
+  color:var(--green);
+  font-size:11px;
+}
+
+/* =========================================================
+   APP
+========================================================= */
+
+#app{
+  min-height:100vh;
+  padding-bottom:90px;
+}
+
+.app-wrap{
+  width:100%;
+  max-width:520px;
+  margin:auto;
+}
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:30;
+  background:rgba(244,247,245,.88);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(220,230,224,.7);
+  padding:14px 16px;
+}
+
+.topbar-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.brand-logo{
+  width:43px;
+  height:43px;
+  border-radius:14px;
+  background:linear-gradient(145deg,var(--green2),var(--green-dark));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-weight:800;
+  box-shadow:0 7px 18px rgba(8,116,67,.2);
+}
+
+.brand-text h1{
+  margin:0;
+  font-size:14px;
+  font-weight:800;
+}
+
+.brand-text small{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.top-actions{
+  display:flex;
+  gap:7px;
+}
+
+.icon-btn{
+  width:40px;
+  height:40px;
+  border:1px solid var(--border);
+  background:var(--card);
+  border-radius:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.content{
+  padding:17px 15px 30px;
+}
+
+.welcome{
+  margin:3px 2px 15px;
+}
+
+.welcome small{
+  color:var(--muted);
+  font-size:11px;
+}
+
+.welcome h2{
+  margin:3px 0 0;
+  font-size:22px;
+  font-weight:800;
+}
+
+.day-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:8px;
+  padding:7px 11px;
+  border-radius:999px;
+  background:#eaf8f0;
+  color:var(--green);
+  font-size:10px;
+  font-weight:800;
+}
+
+/* =========================================================
+   CAPITAL
+========================================================= */
+
+.capital-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:27px;
+  padding:22px;
+  color:white;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(255,255,255,.18),transparent 30%),
+    linear-gradient(145deg,#0b8b50,#075d36);
+  box-shadow:0 18px 35px rgba(7,93,54,.22);
+  margin-bottom:15px;
+}
+
+.capital-card:after{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  right:-80px;
+  bottom:-100px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);
+}
+
+.capital-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.capital-label{
+  font-size:12px;
+  opacity:.78;
+}
+
+.status-badge{
+  display:inline-flex;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:800;
+  background:rgba(255,255,255,.15);
+}
+
+.capital-value{
+  font-size:32px;
+  font-weight:800;
+  margin:8px 0 2px;
+  letter-spacing:-1px;
+}
+
+.capital-sub{
+  font-size:11px;
+  opacity:.75;
+}
+
+.capital-actions{
+  display:flex;
+  gap:8px;
+  margin-top:17px;
+}
+
+.capital-actions button{
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.12);
+  color:white;
+  border-radius:12px;
+  padding:9px 12px;
+  font-size:11px;
+  font-weight:700;
+}
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.summary-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:11px;
+  margin-bottom:15px;
+}
+
+.summary-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:15px;
+  box-shadow:var(--shadow);
+}
+
+.summary-icon{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  background:#edf7f1;
+  color:var(--green);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:10px;
+  font-size:17px;
+}
+
+.summary-title{
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.summary-value{
+  font-size:18px;
+  font-weight:800;
+  margin-top:4px;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section{
+  margin-top:17px;
+  scroll-margin-top:80px;
+}
+
+.section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.section-head h3{
+  margin:0;
+  font-size:15px;
+}
+
+.section-head button{
+  border:0;
+  background:none;
+  color:var(--green);
+  font-size:11px;
+  font-weight:800;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:21px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+
+/* =========================================================
+   SOURCE ROW
+========================================================= */
+
+.source-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border-bottom:1px solid var(--border);
+}
+
+.source-row:last-child{
+  border-bottom:0;
+}
+
+.source-icon{
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  background:#eef7f2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--green);
+  font-weight:800;
+}
+
+.source-info{
+  flex:1;
+  min-width:0;
+}
+
+.source-name{
+  font-size:13px;
+  font-weight:800;
+}
+
+.source-type{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+.source-balance{
+  text-align:right;
+  font-size:13px;
+  font-weight:800;
+}
+
+.source-actions{
+  display:flex;
+  gap:5px;
+  margin-left:5px;
+}
+
+.mini-btn{
+  width:32px;
+  height:32px;
+  border:1px solid var(--border);
+  background:var(--card2);
+  border-radius:10px;
+  font-size:13px;
+}
+
+.danger-btn{
+  color:var(--danger);
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty{
+  padding:25px 15px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.empty-icon{
+  font-size:30px;
+  opacity:.35;
+  margin-bottom:8px;
+}
+
+/* =========================================================
+   PROGRESS / BALANCE GAUGE
+========================================================= */
+
+.progress-panel{
+  padding:16px;
+}
+
+.progress-info{
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+.progress-bar{
+  height:11px;
+  background:#e9efeb;
+  border-radius:999px;
+  overflow:hidden;
+  position:relative;
+}
+
+.progress-fill{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+
+  /*
+    RED -> ORANGE -> YELLOW -> GREEN -> DARK GREEN
+  */
+  background:linear-gradient(
+    90deg,
+    #d63c3c 0%,
+    #e56d25 30%,
+    #d9a31f 55%,
+    #69ad38 78%,
+    #075d36 100%
+  );
+
+  transition:
+    width .5s ease,
+    box-shadow .4s ease;
+}
+
+.progress-fill.perfect{
+  background:#075d36;
+  box-shadow:0 0 12px rgba(7,93,54,.45);
+}
+
+.progress-caption{
+  margin-top:8px;
+  font-size:9px;
+  color:var(--muted);
+  text-align:center;
+}
+
+.closing-status{
+  margin-top:10px;
+  border-radius:14px;
+  padding:11px;
+  text-align:center;
+  font-size:11px;
+  font-weight:800;
+}
+
+.status-ok{
+  background:#eaf8f0;
+  color:var(--green);
+}
+
+.status-bad{
+  background:#fff0f0;
+  color:var(--danger);
+}
+
+.status-near{
+  background:#fff8e6;
+  color:#a86c00;
+}
+
+/* =========================================================
+   LIST
+========================================================= */
+
+.list-item{
+  padding:14px;
+  border-bottom:1px solid var(--border);
+}
+
+.list-item:last-child{
+  border-bottom:0;
+}
+
+.list-main{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.list-title{
+  font-size:12px;
+  font-weight:800;
+}
+
+.list-meta{
+  color:var(--muted);
+  font-size:10px;
+  margin-top:4px;
+}
+
+.list-amount{
+  font-size:13px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.list-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:8px;
+}
+
+.tag{
+  display:inline-flex;
+  padding:5px 8px;
+  border-radius:8px;
+  background:#eef7f2;
+  color:var(--green);
+  font-size:9px;
+  font-weight:800;
+}
+
+/* =========================================================
+   CLOSING
+========================================================= */
+
+.closing-card{
+  padding:15px;
+}
+
+.closing-row{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  font-size:11px;
+}
+
+.closing-row strong{
+  font-size:12px;
+}
+
+.pdf-btn{
+  border:0;
+  background:#17231d;
+  color:white;
+  border-radius:11px;
+  padding:9px 12px;
+  font-size:10px;
+  font-weight:800;
+}
+
+/* =========================================================
+   FAB
+========================================================= */
+
+.fab{
+  position:fixed;
+  z-index:40;
+  right:18px;
+  bottom:78px;
+  width:54px;
+  height:54px;
+  border:0;
+  border-radius:18px;
+  color:white;
+  background:linear-gradient(145deg,var(--green2),var(--green-dark));
+  box-shadow:0 13px 28px rgba(8,116,67,.28);
+  font-size:25px;
+}
+
+.fab-menu{
+  position:fixed;
+  z-index:39;
+  right:18px;
+  bottom:140px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:flex-end;
+}
+
+.fab-option{
+  border:0;
+  background:var(--card);
+  color:var(--text);
+  box-shadow:var(--shadow);
+  border-radius:13px;
+  padding:10px 13px;
+  font-size:11px;
+  font-weight:800;
+}
+
+/* =========================================================
+   BOTTOM NAV
+========================================================= */
+
+.bottom-nav{
+  position:fixed;
+  z-index:35;
+  bottom:0;
+  left:0;
+  right:0;
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+}
+
+.nav-inner{
+  max-width:520px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+}
+
+.nav-btn{
+  border:0;
+  background:none;
+  color:#829087;
+  padding:5px 2px;
+  font-size:9px;
+  font-weight:700;
+}
+
+.nav-icon{
+  display:block;
+  font-size:17px;
+  margin-bottom:3px;
+}
+
+.nav-btn.active{
+  color:var(--green);
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal{
+  position:fixed;
+  z-index:100;
+  inset:0;
+  background:rgba(12,24,17,.52);
+  backdrop-filter:blur(5px);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+
+.modal-box{
+  width:100%;
+  max-width:520px;
+  max-height:92vh;
+  overflow:auto;
+  background:var(--card);
+  border-radius:27px 27px 0 0;
+  padding:20px 17px 25px;
+}
+
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.modal-head h3{
+  margin:0;
+  font-size:17px;
+}
+
+.close-btn{
+  width:35px;
+  height:35px;
+  border:0;
+  background:var(--card2);
+  border-radius:11px;
+  font-size:18px;
+}
+
+.form-actions{
+  display:flex;
+  gap:8px;
+  margin-top:15px;
+}
+
+.form-actions button{
+  flex:1;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+#toast{
+  position:fixed;
+  z-index:200;
+  left:50%;
+  bottom:86px;
+  transform:translate(-50%,20px);
+  opacity:0;
+  pointer-events:none;
+  background:#17231d;
+  color:white;
+  padding:11px 15px;
+  border-radius:12px;
+  font-size:11px;
+  font-weight:700;
+  transition:.25s;
+  max-width:90%;
+  text-align:center;
+}
+
+#toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading{
+  position:fixed;
+  z-index:500;
+  inset:0;
+  background:rgba(244,247,245,.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.loader-card{
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+
+.spinner{
+  width:35px;
+  height:35px;
+  border:4px solid #e4ebe7;
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  margin:0 auto 12px;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+/* =========================================================
+   PAGE FOOTER
+========================================================= */
+
+.app-footer{
+  text-align:center;
+  padding:25px 15px 20px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.8;
+}
+
+.app-footer strong{
+  color:var(--green);
+  font-size:11px;
+}
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+body.dark{
+  --bg:#101613;
+  --card:#18201b;
+  --card2:#202a23;
+  --text:#eef5f0;
+  --muted:#9baaa1;
+  --border:#29352e;
+  --shadow:0 10px 30px rgba(0,0,0,.22);
+}
+
+body.dark .input,
+body.dark select,
+body.dark textarea{
+  color:var(--text);
+}
+
+body.dark .input:focus,
+body.dark select:focus,
+body.dark textarea:focus{
+  background:var(--card);
+}
+
+body.dark .bottom-nav,
+body.dark .topbar{
+  background:rgba(16,22,19,.92);
+}
+
+body.dark .logo-box,
+body.dark .brand-logo{
+  color:white;
+}
+
+body.dark .summary-icon,
+body.dark .source-icon,
+body.dark .tag{
+  background:#20382b;
+}
+
+body.dark .progress-bar{
+  background:#29352e;
+}
+
+body.dark .status-ok{
+  background:#193528;
+}
+
+body.dark .status-bad{
+  background:#3a2020;
+}
+
+body.dark .status-near{
+  background:#3a311d;
+}
+
+body.dark .auth-card,
+body.dark .loader-card{
+  background:var(--card);
+}
+
+body.dark .day-badge{
+  background:#193528;
+}
+
+@media(min-width:700px){
+
+  .modal{
+    align-items:center;
+    padding:20px;
+  }
+
+  .modal-box{
+    border-radius:25px;
+  }
+
+  .bottom-nav{
+    border-radius:20px 20px 0 0;
+  }
+
+}
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     AUTH
+========================================================= -->
+
+<div id="authScreen">
+
+  <div class="auth-card">
+
+    <div class="logo-box">K</div>
+
+    <h1 class="auth-title">
+      WAKALA
+    </h1>
+
+    <p class="auth-subtitle">
+      Kitabu cha Mtaji • Uhasibu wa Wakala
+    </p>
+
+    <div id="loginForm">
+
+      <div class="field">
+
+        <label>EMAIL</label>
+
+        <input
+          id="loginEmail"
+          class="input"
+          type="email"
+          placeholder="mfano@email.com">
+
+      </div>
+
+      <div class="field">
+
+        <label>NYWILA</label>
+
+        <input
+          id="loginPassword"
+          class="input"
+          type="password"
+          placeholder="Weka nywila">
+
+      </div>
+
+      <button
+        class="primary-btn"
+        onclick="login()">
+
+        INGIA KWENYE MFUMO
+
+      </button>
+
+      <div class="auth-switch">
+
+        Huna akaunti?
+
+        <button onclick="showRegister()">
+          Jisajili hapa
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div id="registerForm" class="hidden">
+
+      <div class="field">
+
+        <label>JINA KAMILI</label>
+
+        <input
+          id="registerName"
+          class="input"
+          placeholder="Jina lako">
+
+      </div>
+
+      <div class="field">
+
+        <label>EMAIL</label>
+
+        <input
+          id="registerEmail"
+          class="input"
+          type="email"
+          placeholder="mfano@email.com">
+
+      </div>
+
+      <div class="field">
+
+        <label>NYWILA</label>
+
+        <input
+          id="registerPassword"
+          class="input"
+          type="password"
+          placeholder="Angalau herufi 6">
+
+      </div>
+
+      <div class="field">
+
+        <label>RUDIA NYWILA</label>
+
+        <input
+          id="registerPassword2"
+          class="input"
+          type="password"
+          placeholder="Rudia nywila">
+
+      </div>
+
+      <button
+        class="primary-btn"
+        onclick="register()">
+
+        TENGENEZA AKAUNTI
+
+      </button>
+
+      <div class="auth-switch">
+
+        Tayari una akaunti?
+
+        <button onclick="showLogin()">
+          Ingia hapa
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- LOGIN COPYRIGHT -->
+
+    <div class="auth-footer">
+
+      <strong>Goden Tech</strong><br>
+
+      Mfumo wa Wakala — Kitabu cha Mtaji<br>
+
+      godenvegula@gmail.com<br>
+
+      © 2026 Goden Tech. All Rights Reserved.
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     APP
+========================================================= -->
+
+<div id="app" class="hidden">
+
+  <div class="app-wrap">
+
+    <header class="topbar">
+
+      <div class="topbar-inner">
+
+        <div class="brand">
+
+          <div class="brand-logo">
+            K
+          </div>
+
+          <div class="brand-text">
+
+            <h1>
+              WAKALA
+            </h1>
+
+            <small>
+              Kitabu cha Mtaji
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+          <button
+            class="icon-btn"
+            onclick="toggleDark()"
+            title="Dark mode">
+
+            ◐
+
+          </button>
+
+          <button
+            class="icon-btn"
+            onclick="logout()"
+            title="Toka">
+
+            ↪
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <main class="content">
+
+      <div class="welcome">
+
+        <small id="welcomeText">
+          Karibu
+        </small>
+
+        <h2>
+          Dashboard yako
+        </h2>
+
+        <div
+          id="currentDayBadge"
+          class="day-badge">
+
+          📅 Siku ya leo: -
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================================
+           CAPITAL
+      ====================================================== -->
+
+      <section id="home">
+
+        <div class="capital-card">
+
+          <div class="capital-top">
+
+            <div class="capital-label">
+              MTAJI MKUU
+            </div>
+
+            <div
+              id="capitalStatus"
+              class="status-badge">
+
+              -
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="mainCapital"
+            class="capital-value">
+
+            TSh 0
+
+          </div>
+
+
+          <div class="capital-sub">
+
+            Mtaji unaotumika kwenye shughuli za wakala
+
+          </div>
+
+
+          <div class="capital-actions">
+
+            <button
+              onclick="openIncrease('other')">
+
+              ＋ Ongeza Mtaji
+
+            </button>
+
+            <button
+              onclick="adjustCapital()">
+
+              ✎ Rekebisha
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <div class="summary-grid">
+
+          <div class="summary-card">
+
+            <div class="summary-icon">
+              💵
+            </div>
+
+            <div class="summary-title">
+              CASH
+            </div>
+
+            <div
+              id="cashSummary"
+              class="summary-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+
+          <div class="summary-card">
+
+            <div class="summary-icon">
+              📱
+            </div>
+
+            <div class="summary-title">
+              MITANDAO
+            </div>
+
+            <div
+              id="networkSummary"
+              class="summary-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+
+          <div class="summary-card">
+
+            <div class="summary-icon">
+              🏦
+            </div>
+
+            <div class="summary-title">
+              BENKI
+            </div>
+
+            <div
+              id="bankSummary"
+              class="summary-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+
+          <div class="summary-card">
+
+            <div class="summary-icon">
+              ✓
+            </div>
+
+            <div class="summary-title">
+              JUMLA ILIYOPO
+            </div>
+
+            <div
+              id="totalSummary"
+              class="summary-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ===================================================
+             DAILY CHECK
+        ==================================================== -->
+
+        <div class="section">
+
+          <div class="section-head">
+
+            <h3>
+              Ukaguzi wa Mtaji
+            </h3>
+
+          </div>
+
+
+          <div class="panel progress-panel">
+
+            <div class="progress-info">
+
+              <span>
+                Kiwango cha kusawazisha hesabu
+              </span>
+
+              <strong id="progressPercent">
+                0%
+              </strong>
+
+            </div>
+
+
+            <div class="progress-bar">
+
+              <div
+                id="progressFill"
+                class="progress-fill">
+
+              </div>
+
+            </div>
+
+
+            <div
+              id="progressCaption"
+              class="progress-caption">
+
+              Hesabu bado iko mbali na mtaji mkuu
+
+            </div>
+
+
+            <div
+              class="closing-status status-bad"
+              id="quickStatus">
+
+              HAIJASAWAZISHWA
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- NETWORKS -->
+
+      <section
+        id="networks"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            📱 Mitandao
+          </h3>
+
+          <button onclick="addNetwork()">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="networksList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- BANKS -->
+
+      <section
+        id="banks"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            🏦 Benki
+          </h3>
+
+          <button onclick="addBank()">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="banksList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- CASH -->
+
+      <section
+        id="cash"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            💵 Cash
+          </h3>
+
+          <button onclick="updateCashPrompt()">
+            Rekebisha
+          </button>
+
+        </div>
+
+
+        <div class="panel">
+
+          <div class="source-row">
+
+            <div class="source-icon">
+              TSh
+            </div>
+
+            <div class="source-info">
+
+              <div class="source-name">
+                Cash / Taslimu
+              </div>
+
+              <div class="source-type">
+                Fedha taslimu mkononi
+              </div>
+
+            </div>
+
+            <div
+              id="cashValue"
+              class="source-balance">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- EXPENSES -->
+
+      <section
+        id="expenses"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            💸 Matumizi
+          </h3>
+
+          <button onclick="openExpense()">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="expensesList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- INCREASES -->
+
+      <section
+        id="increases"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            📈 Ongezeko
+          </h3>
+
+          <button onclick="openIncrease('commission')">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="increasesList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- CLOSING -->
+
+      <section
+        id="closing"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            📊 Funga Hesabu
+          </h3>
+
+          <button onclick="closeToday()">
+            Funga Leo
+          </button>
+
+        </div>
+
+        <div
+          class="panel"
+          id="closingPreview">
+
+        </div>
+
+      </section>
+
+
+      <!-- HISTORY -->
+
+      <section
+        id="history"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            🗓️ Historia ya Kufunga
+          </h3>
+
+        </div>
+
+        <div
+          id="closingsList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- FOOTER -->
+
+      <footer class="app-footer">
+
+        <strong>Goden Tech</strong><br>
+
+        WAKALA — Kitabu cha Mtaji<br>
+
+        godenvegula@gmail.com<br>
+
+        © 2026 Goden Tech. All Rights Reserved.
+
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- FAB -->
+
+  <button
+    class="fab"
+    onclick="toggleFab()">
+
+    +
+
+  </button>
+
+
+  <div
+    id="fabMenu"
+    class="fab-menu hidden">
+
+    <button
+      class="fab-option"
+      onclick="openExpense();toggleFab()">
+
+      💸 Ongeza Matumizi
+
+    </button>
+
+    <button
+      class="fab-option"
+      onclick="openIncrease('commission');toggleFab()">
+
+      📈 Ongeza Commission
+
+    </button>
+
+    <button
+      class="fab-option"
+      onclick="openIncrease('other');toggleFab()">
+
+      💰 Ongeza Mtaji
+
+    </button>
+
+  </div>
+
+
+  <!-- BOTTOM NAV -->
+
+  <nav class="bottom-nav">
+
+    <div class="nav-inner">
+
+      <button
+        class="nav-btn active"
+        onclick="goTo('home',this)">
+
+        <span class="nav-icon">
+          ⌂
+        </span>
+
+        Mwanzo
+
+      </button>
+
+
+      <button
+        class="nav-btn"
+        onclick="goTo('networks',this)">
+
+        <span class="nav-icon">
+          📱
+        </span>
+
+        Mitandao
+
+      </button>
+
+
+      <button
+        class="nav-btn"
+        onclick="goTo('banks',this)">
+
+        <span class="nav-icon">
+          🏦
+        </span>
+
+        Benki
+
+      </button>
+
+
+      <button
+        class="nav-btn"
+        onclick="goTo('expenses',this)">
+
+        <span class="nav-icon">
+          💸
+        </span>
+
+        Matumizi
+
+      </button>
+
+
+      <button
+        class="nav-btn"
+        onclick="goTo('history',this)">
+
+        <span class="nav-icon">
+          ☰
+        </span>
+
+        Zaidi
+
+      </button>
+
+    </div>
+
+  </nav>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+  id="modal"
+  class="modal hidden">
+
+  <div class="modal-box">
+
+    <div class="modal-head">
+
+      <h3 id="modalTitle">
+        Fomu
+      </h3>
+
+      <button
+        class="close-btn"
+        onclick="closeModal()">
+
+        ×
+
+      </button>
+
+    </div>
+
+    <div id="modalContent">
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- TOAST -->
+
+<div id="toast"></div>
+
+
+<!-- LOADING -->
+
+<div
+  id="loading"
+  class="loading hidden">
+
+  <div class="loader-card">
+
+    <div class="spinner"></div>
+
+    <div style="font-size:12px;font-weight:800">
+      Tafadhali subiri...
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyDw1cUC2i2jt9u8z-b6P1W7Qi4UIbfebIQ",
+
+  authDomain:
+    "wakala-2b8cf.firebaseapp.com",
+
+  projectId:
+    "wakala-2b8cf",
+
+  storageBucket:
+    "wakala-2b8cf.firebasestorage.app",
+
+  messagingSenderId:
+    "765923376977",
+
+  appId:
+    "1:765923376977:web:200cd9bd870d9ed380dd70"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+
+const db = firebase.firestore();
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let state = {
+
+  initialized:false,
+
+  mainCapital:0,
+
+  networks:[],
+
+  banks:[],
+
+  cash:0,
+
+  expenses:[],
+
+  increases:[],
+
+  closings:[]
+
+};
+
+
+let currentUser = null;
+
+let authMode = "login";
+
+let autoCloseTimer = null;
+
+let ui = {
+
+  showExpenseForm:false,
+
+  showIncreaseForm:false,
+
+  increaseType:"commission",
+
+  autoClosing:false
+
+};
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function fmt(value){
+
+  value = Number(value || 0);
+
+  return "TSh " +
+    value.toLocaleString("en-US",{
+      maximumFractionDigits:0
+    });
+
+}
+
+
+function numberValue(id){
+
+  return Number(
+    document.getElementById(id)?.value || 0
+  );
+
+}
+
+
+/*
+  Tanzania local date.
+
+  Saa 6 usiku = 00:00.
+  Kwa JavaScript hii ndiyo mwanzo wa siku mpya.
+*/
+
+function today(){
+
+  const d = new Date();
+
+  const y = d.getFullYear();
+
+  const m =
+    String(d.getMonth()+1)
+      .padStart(2,"0");
+
+  const day =
+    String(d.getDate())
+      .padStart(2,"0");
+
+  return `${y}-${m}-${day}`;
+
+}
+
+
+function yesterday(){
+
+  const d = new Date();
+
+  d.setDate(d.getDate()-1);
+
+  const y = d.getFullYear();
+
+  const m =
+    String(d.getMonth()+1)
+      .padStart(2,"0");
+
+  const day =
+    String(d.getDate())
+      .padStart(2,"0");
+
+  return `${y}-${m}-${day}`;
+
+}
+
+
+function formatDateSwahili(dateString){
+
+  if(!dateString) return "-";
+
+  const parts =
+    String(dateString).split("-");
+
+  if(parts.length !== 3)
+    return dateString;
+
+  return (
+    parts[2] + "/" +
+    parts[1] + "/" +
+    parts[0]
+  );
+
+}
+
+
+function escapeHTML(str){
+
+  return String(str ?? "")
+
+    .replace(/&/g,"&amp;")
+
+    .replace(/</g,"&lt;")
+
+    .replace(/>/g,"&gt;")
+
+    .replace(/"/g,"&quot;")
+
+    .replace(/'/g,"&#039;");
+
+}
+
+
+function showLoading(){
+
+  document.getElementById("loading")
+    .classList.remove("hidden");
+
+}
+
+
+function hideLoading(){
+
+  document.getElementById("loading")
+    .classList.add("hidden");
+
+}
+
+
+function toast(message){
+
+  const el =
+    document.getElementById("toast");
+
+  el.textContent = message;
+
+  el.classList.add("show");
+
+  setTimeout(()=>{
+
+    el.classList.remove("show");
+
+  },2600);
+
+}
+
+
+function errorMessage(error){
+
+  const code =
+    error?.code || "";
+
+  const map = {
+
+    "auth/invalid-email":
+      "Email uliyoingiza si sahihi.",
+
+    "auth/user-not-found":
+      "Akaunti haijapatikana.",
+
+    "auth/wrong-password":
+      "Nywila si sahihi.",
+
+    "auth/invalid-credential":
+      "Email au nywila si sahihi.",
+
+    "auth/email-already-in-use":
+      "Email hiyo tayari imetumika.",
+
+    "auth/weak-password":
+      "Nywila ni dhaifu. Tumia angalau herufi 6.",
+
+    "auth/network-request-failed":
+      "Tatizo la internet.",
+
+    "auth/too-many-requests":
+      "Majaribio yamezidi. Jaribu tena baadaye.",
+
+    "permission-denied":
+      "Huna ruhusa ya kufanya kitendo hiki.",
+
+    "unavailable":
+      "Huduma ya Firebase haipatikani kwa sasa."
+
+  };
+
+  return map[code] ||
+    error?.message ||
+    "Kuna tatizo limetokea.";
+
+}
+
+
+/* =========================================================
+   AUTH UI
+========================================================= */
+
+function showRegister(){
+
+  document.getElementById("loginForm")
+    .classList.add("hidden");
+
+  document.getElementById("registerForm")
+    .classList.remove("hidden");
+
+}
+
+
+function showLogin(){
+
+  document.getElementById("registerForm")
+    .classList.add("hidden");
+
+  document.getElementById("loginForm")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================================================
+   REGISTER
+========================================================= */
+
+async function register(){
+
+  const name =
+    document.getElementById("registerName")
+      .value.trim();
+
+  const email =
+    document.getElementById("registerEmail")
+      .value.trim();
+
+  const password =
+    document.getElementById("registerPassword")
+      .value;
+
+  const password2 =
+    document.getElementById("registerPassword2")
+      .value;
+
+
+  if(!name || !email || !password){
+
+    alert("Jaza taarifa zote.");
+
+    return;
+
+  }
+
+
+  if(password !== password2){
+
+    alert("Nywila hazifanani.");
+
+    return;
+
+  }
+
+
+  if(password.length < 6){
+
+    alert(
+      "Nywila lazima iwe na angalau herufi 6."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    const result =
+      await auth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+
+    const user =
+      result.user;
+
+
+    await db.collection("users")
+      .doc(user.uid)
+      .set({
+
+        name:name,
+
+        email:email,
+
+        initialized:false,
+
+        mainCapital:0,
+
+        cash:0,
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp(),
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp(),
+
+        lastActiveDay:
+          today()
+
+      });
+
+
+    toast(
+      "Akaunti imetengenezwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+async function login(){
+
+  const email =
+    document.getElementById("loginEmail")
+      .value.trim();
+
+  const password =
+    document.getElementById("loginPassword")
+      .value;
+
+
+  if(!email || !password){
+
+    alert(
+      "Weka email na nywila."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await auth.signInWithEmailAndPassword(
+      email,
+      password
+    );
+
+
+  }catch(error){
+
+    alert(
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+async function logout(){
+
+  if(
+    !confirm(
+      "Unataka kutoka kwenye mfumo?"
+    )
+  ) return;
+
+
+  stopAutoCloseWatcher();
+
+  await auth.signOut();
+
+}
+
+
+/* =========================================================
+   FIRESTORE REFS
+========================================================= */
+
+function userRef(){
+
+  return db.collection("users")
+    .doc(currentUser.uid);
+
+}
+
+
+function collectionRef(name){
+
+  return userRef().collection(name);
+
+}
+
+
+/* =========================================================
+   LOAD USER DATA
+========================================================= */
+
+async function loadData(){
+
+  showLoading();
+
+
+  try{
+
+    const doc =
+      await userRef().get();
+
+
+    if(!doc.exists){
+
+      await userRef().set({
+
+        name:
+          currentUser.displayName || "",
+
+        email:
+          currentUser.email || "",
+
+        initialized:false,
+
+        mainCapital:0,
+
+        cash:0,
+
+        lastActiveDay:
+          today(),
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+      state.initialized = false;
+
+      state.mainCapital = 0;
+
+      state.cash = 0;
+
+      currentUser.userData = {
+
+        name:
+          currentUser.displayName || "",
+
+        email:
+          currentUser.email || "",
+
+        lastActiveDay:
+          today()
+
+      };
+
+    }else{
+
+      const data =
+        doc.data() || {};
+
+
+      state.initialized =
+        Boolean(data.initialized);
+
+
+      state.mainCapital =
+        Number(
+          data.mainCapital || 0
+        );
+
+
+      state.cash =
+        Number(
+          data.cash || 0
+        );
+
+
+      currentUser.userData =
+        data;
+
+    }
+
+
+    const [
+
+      networksSnap,
+
+      banksSnap,
+
+      expensesSnap,
+
+      increasesSnap,
+
+      closingsSnap
+
+    ] = await Promise.all([
+
+      collectionRef("networks").get(),
+
+      collectionRef("banks").get(),
+
+      collectionRef("expenses").get(),
+
+      collectionRef("increases").get(),
+
+      collectionRef("closings").get()
+
+    ]);
+
+
+    state.networks =
+      networksSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.banks =
+      banksSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.expenses =
+      expensesSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.increases =
+      increasesSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.closings =
+      closingsSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    /*
+      IMPORTANT:
+      Check whether a previous day needs
+      automatic closing BEFORE rendering.
+    */
+
+    await checkAutomaticDailyClosing();
+
+
+    render();
+
+
+    if(!state.initialized){
+
+      setTimeout(
+        showInitialSetup,
+        300
+      );
+
+    }
+
+
+    startAutoCloseWatcher();
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kupakia taarifa: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   SAVE BASE DATA
+========================================================= */
+
+async function saveBaseData(){
+
+  await userRef().set({
+
+    initialized:
+      state.initialized,
+
+    mainCapital:
+      Number(state.mainCapital || 0),
+
+    cash:
+      Number(state.cash || 0),
+
+    name:
+      currentUser.userData?.name ||
+      currentUser.displayName ||
+      "",
+
+    email:
+      currentUser.email || "",
+
+    updatedAt:
+      firebase.firestore.FieldValue
+        .serverTimestamp()
+
+  },{
+    merge:true
+  });
+
+}
+
+
+/* =========================================================
+   INITIAL SETUP
+========================================================= */
+
+function showInitialSetup(){
+
+  openModal(
+
+    "Anza Mfumo",
+
+    `
+
+    <div style="text-align:center;margin-bottom:18px">
+
+      <div style="
+        width:55px;
+        height:55px;
+        border-radius:17px;
+        background:#edf7f1;
+        color:#087443;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        margin:auto;
+        font-size:23px;
+        font-weight:800;">
+
+        K
+
+      </div>
+
+      <p style="
+        color:var(--muted);
+        font-size:12px;
+        line-height:1.6;">
+
+        Weka mtaji wako wa kuanzia.
+
+      </p>
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MTAJI WA KUANZIA
+      </label>
+
+      <input
+        id="initialCapital"
+        class="input"
+        type="number"
+        min="0"
+        placeholder="Mfano 1,000,000">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveInitialSetup()">
+
+      ANZA KUTUMIA MFUMO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveInitialSetup(){
+
+  const amount =
+    Number(
+      document.getElementById(
+        "initialCapital"
+      ).value
+    );
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi cha mtaji."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    state.mainCapital =
+      amount;
+
+    state.cash =
+      0;
+
+    state.initialized =
+      true;
+
+
+    await userRef().set({
+
+      initialized:true,
+
+      mainCapital:amount,
+
+      cash:0,
+
+      lastActiveDay:today(),
+
+      updatedAt:
+        firebase.firestore.FieldValue
+          .serverTimestamp()
+
+    },{
+      merge:true
+    });
+
+
+    closeModal();
+
+    render();
+
+
+    toast(
+      "Mtaji wa kuanzia umehifadhiwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   AUTOMATIC DAILY CLOSING
+========================================================= */
+
+/*
+  Saa 6 usiku Tanzania = 00:00.
+
+  Mfumo huhifadhi:
+  lastActiveDay
+
+  Mfano:
+  lastActiveDay = 2026-09-11
+  leo = 2026-09-12
+
+  Mfumo utafungia 2026-09-11
+  kama haikufungwa.
+
+  Mtaji Mkuu hauwekwi upya.
+*/
+
+async function checkAutomaticDailyClosing(){
+
+  if(!currentUser)
+    return;
+
+
+  if(!state.initialized)
+    return;
+
+
+  if(ui.autoClosing)
+    return;
+
+
+  const currentDay =
+    today();
+
+
+  let lastDay =
+    currentUser.userData?.lastActiveDay ||
+    "";
+
+
+  /*
+    Kama hakuna lastActiveDay,
+    tunaiweka leo.
+  */
+
+  if(!lastDay){
+
+    await userRef().set({
+
+      lastActiveDay:currentDay
+
+    },{
+      merge:true
+    });
+
+
+    if(currentUser.userData)
+      currentUser.userData.lastActiveDay =
+        currentDay;
+
+
+    return;
+
+  }
+
+
+  /*
+    Hakuna mabadiliko ya siku.
+  */
+
+  if(lastDay === currentDay){
+
+    return;
+
+  }
+
+
+  ui.autoClosing = true;
+
+
+  try{
+
+    /*
+      Kama siku ya mwisho haikufungwa,
+      ifunge automatically.
+    */
+
+    const oldClosing =
+      await collectionRef("closings")
+        .doc(lastDay)
+        .get();
+
+
+    if(!oldClosing.exists){
+
+      await autoCloseDay(lastDay);
+
+    }
+
+
+    /*
+      Anza ukurasa wa siku mpya.
+      Mtaji mkuu na balances havibadilishwi.
+    */
+
+    await userRef().set({
+
+      lastActiveDay:currentDay,
+
+      updatedAt:
+        firebase.firestore.FieldValue
+          .serverTimestamp()
+
+    },{
+      merge:true
+    });
+
+
+    if(currentUser.userData){
+
+      currentUser.userData.lastActiveDay =
+        currentDay;
+
+    }
+
+
+    toast(
+      "📅 Siku mpya imeanza. Hesabu ya " +
+      formatDateSwahili(lastDay) +
+      " imefungwa automatically."
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "Auto closing error:",
+      error
+    );
+
+  }finally{
+
+    ui.autoClosing = false;
+
+  }
+
+}
+
+
+/*
+  Auto close haina confirmation.
+*/
+
+async function autoCloseDay(date){
+
+  const t =
+    getTotals();
+
+
+  const balanced =
+    Math.abs(t.difference) < 0.01;
+
+
+  const expensesToday =
+    state.expenses
+
+      .filter(e=>
+        e.date === date
+      )
+
+      .map(e=>({
+
+        amount:
+          Number(e.amount || 0),
+
+        description:
+          e.description || "",
+
+        source:
+          e.source || "",
+
+        sourceName:
+          e.sourceName || ""
+
+      }));
+
+
+  const increasesToday =
+    state.increases
+
+      .filter(i=>
+        i.date === date
+      )
+
+      .map(i=>({
+
+        amount:
+          Number(i.amount || 0),
+
+        type:
+          i.type || "",
+
+        description:
+          i.description || "",
+
+        source:
+          i.source || "",
+
+        sourceName:
+          i.sourceName || ""
+
+      }));
+
+
+  const networksSnapshot =
+    state.networks.map(n=>({
+
+      id:n.id,
+
+      name:n.name,
+
+      balance:
+        Number(n.balance || 0)
+
+    }));
+
+
+  const banksSnapshot =
+    state.banks.map(b=>({
+
+      id:b.id,
+
+      name:b.name,
+
+      balance:
+        Number(b.balance || 0)
+
+    }));
+
+
+  const closingData = {
+
+    date:date,
+
+    automatic:true,
+
+    diff:
+      Number(t.difference),
+
+    totalOnHand:
+      Number(t.totalOnHand),
+
+    mainCapital:
+      Number(t.capital),
+
+    cash:
+      Number(t.cash),
+
+    networksSnapshot:
+      networksSnapshot,
+
+    banksSnapshot:
+      banksSnapshot,
+
+    expensesToday:
+      expensesToday,
+
+    increasesToday:
+      increasesToday,
+
+    balanced:
+      balanced,
+
+    closedAt:
+      firebase.firestore.FieldValue
+        .serverTimestamp()
+
+  };
+
+
+  await collectionRef("closings")
+    .doc(date)
+    .set(
+      closingData,
+      {
+        merge:true
+      }
+    );
+
+}
+
+
+/*
+  Watcher runs every 30 seconds.
+
+  Hii inasaidia kama app ipo wazi
+  wakati 00:00 inapita.
+*/
+
+function startAutoCloseWatcher(){
+
+  stopAutoCloseWatcher();
+
+
+  autoCloseTimer =
+    setInterval(async()=>{
+
+      if(!currentUser)
+        return;
+
+
+      try{
+
+        await checkAutomaticDailyClosing();
+
+        render();
+
+      }catch(error){
+
+        console.error(
+          "Daily watcher:",
+          error
+        );
+
+      }
+
+    },30000);
+
+}
+
+
+function stopAutoCloseWatcher(){
+
+  if(autoCloseTimer){
+
+    clearInterval(autoCloseTimer);
+
+    autoCloseTimer = null;
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER
+========================================================= */
+
+function render(){
+
+  renderDashboard();
+
+  renderNetworks();
+
+  renderBanks();
+
+  renderExpenses();
+
+  renderIncreases();
+
+  renderClosingPreview();
+
+  renderClosings();
+
+  updateWelcome();
+
+}
+
+
+function updateWelcome(){
+
+  const name =
+    currentUser?.userData?.name ||
+    currentUser?.email ||
+    "Mtumiaji";
+
+
+  document.getElementById(
+    "welcomeText"
+  ).textContent =
+    "Karibu, " + name;
+
+
+  const dayBadge =
+    document.getElementById(
+      "currentDayBadge"
+    );
+
+
+  if(dayBadge){
+
+    dayBadge.innerHTML =
+      "📅 Siku ya leo: <b>" +
+      formatDateSwahili(today()) +
+      "</b>";
+
+  }
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function renderDashboard(){
+
+  const networks =
+    state.networks.reduce(
+
+      (sum,n)=>
+        sum +
+        Number(n.balance || 0),
+
+      0
+
+    );
+
+
+  const banks =
+    state.banks.reduce(
+
+      (sum,b)=>
+        sum +
+        Number(b.balance || 0),
+
+      0
+
+    );
+
+
+  const total =
+    networks +
+    banks +
+    Number(state.cash || 0);
+
+
+  const capital =
+    Number(state.mainCapital || 0);
+
+
+  const difference =
+    total - capital;
+
+
+  document.getElementById(
+    "mainCapital"
+  ).textContent =
+    fmt(capital);
+
+
+  document.getElementById(
+    "cashSummary"
+  ).textContent =
+    fmt(state.cash);
+
+
+  document.getElementById(
+    "networkSummary"
+  ).textContent =
+    fmt(networks);
+
+
+  document.getElementById(
+    "bankSummary"
+  ).textContent =
+    fmt(banks);
+
+
+  document.getElementById(
+    "totalSummary"
+  ).textContent =
+    fmt(total);
+
+
+  document.getElementById(
+    "cashValue"
+  ).textContent =
+    fmt(state.cash);
+
+
+  /*
+    BALANCE CLOSENESS
+
+    100% = exact match.
+
+    0% = very far.
+
+    Hii ndiyo inafanya bar ianze red
+    na kuelekea green kadiri hesabu
+    inavyokaribia mtaji mkuu.
+  */
+
+  let closeness = 0;
+
+
+  if(capital > 0){
+
+    closeness =
+      100 -
+      (
+        Math.abs(difference) /
+        capital
+      ) * 100;
+
+    closeness =
+      Math.max(
+        0,
+        Math.min(
+          100,
+          closeness
+        )
+      );
+
+  }else{
+
+    closeness =
+      total === 0
+        ? 100
+        : 0;
+
+  }
+
+
+  const progressFill =
+    document.getElementById(
+      "progressFill"
+    );
+
+
+  progressFill.style.width =
+    closeness + "%";
+
+
+  const progressPercent =
+    document.getElementById(
+      "progressPercent"
+    );
+
+
+  progressPercent.textContent =
+    Math.round(closeness) + "%";
+
+
+  const caption =
+    document.getElementById(
+      "progressCaption"
+    );
+
+
+  const status =
+    document.getElementById(
+      "quickStatus"
+    );
+
+
+  const capitalStatus =
+    document.getElementById(
+      "capitalStatus"
+    );
+
+
+  /*
+    EXACTLY BALANCED
+  */
+
+  if(Math.abs(difference) < 0.01){
+
+    progressFill.classList.add(
+      "perfect"
+    );
+
+
+    caption.textContent =
+      "✓ Hesabu iko sawa kabisa na Mtaji Mkuu";
+
+
+    status.className =
+      "closing-status status-ok";
+
+
+    status.textContent =
+      "✓ IMESAWAZISHWA";
+
+
+    capitalStatus.textContent =
+      "IMESAWAZISHWA";
+
+
+    return;
+
+  }
+
+
+  progressFill.classList.remove(
+    "perfect"
+  );
+
+
+  /*
+    VERY CLOSE
+  */
+
+  if(closeness >= 95){
+
+    caption.textContent =
+      "Karibu sana kusawazika na Mtaji Mkuu";
+
+
+    status.className =
+      "closing-status status-near";
+
+
+    status.textContent =
+      "🟡 INAKARIBIA KUSAWAZIKA • " +
+      fmt(Math.abs(difference));
+
+
+    capitalStatus.textContent =
+      "INAKARIBIA";
+
+    return;
+
+  }
+
+
+  /*
+    MEDIUM
+  */
+
+  if(closeness >= 75){
+
+    caption.textContent =
+      "Hesabu inaanza kukaribia Mtaji Mkuu";
+
+
+    status.className =
+      "closing-status status-near";
+
+
+    status.textContent =
+      "🟠 BADO KUNA TOFAUTI • " +
+      fmt(Math.abs(difference));
+
+
+    capitalStatus.textContent =
+      "TOFAUTI";
+
+    return;
+
+  }
+
+
+  /*
+    FAR
+  */
+
+  caption.textContent =
+    "Hesabu iko mbali na Mtaji Mkuu";
+
+
+  status.className =
+    "closing-status status-bad";
+
+
+  status.textContent =
+    "🔴 HAIJASAWAZISHWA • " +
+    fmt(Math.abs(difference));
+
+
+  capitalStatus.textContent =
+    "HAIJASAWAZISHWA";
+
+}
+
+
+/* =========================================================
+   NETWORKS
+========================================================= */
+
+function renderNetworks(){
+
+  const el =
+    document.getElementById(
+      "networksList"
+    );
+
+
+  if(state.networks.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          📱
+        </div>
+
+        Hakuna mtandao bado.<br>
+
+        Bonyeza <b>+ Ongeza</b> kuanza.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    state.networks.map(n=>`
+
+      <div class="source-row">
+
+        <div class="source-icon">
+          📱
+        </div>
+
+        <div class="source-info">
+
+          <div class="source-name">
+
+            ${escapeHTML(n.name)}
+
+          </div>
+
+          <div class="source-type">
+            Mtandao
+          </div>
+
+        </div>
+
+        <div class="source-balance">
+
+          ${fmt(n.balance)}
+
+        </div>
+
+        <div class="source-actions">
+
+          <button
+            class="mini-btn"
+            onclick="editNetwork('${n.id}')">
+
+            ✎
+
+          </button>
+
+          <button
+            class="mini-btn danger-btn"
+            onclick="removeNetwork('${n.id}')">
+
+            ×
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+/* =========================================================
+   ADD NETWORK
+========================================================= */
+
+function addNetwork(){
+
+  openModal(
+
+    "Ongeza Mtandao",
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA LA MTANDAO
+      </label>
+
+      <input
+        id="networkName"
+        class="input"
+        placeholder="Mfano M-Pesa">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        FLOAT / SALIO
+      </label>
+
+      <input
+        id="networkBalance"
+        class="input"
+        type="number"
+        min="0"
+        placeholder="Mfano 500000">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveNetwork()">
+
+      HIFADHI MTANDAO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveNetwork(){
+
+  const name =
+    document.getElementById(
+      "networkName"
+    ).value.trim();
+
+
+  const balance =
+    Number(
+      document.getElementById(
+        "networkBalance"
+      ).value || 0
+    );
+
+
+  if(!name){
+
+    alert(
+      "Weka jina la mtandao."
+    );
+
+    return;
+
+  }
+
+
+  if(balance < 0){
+
+    alert(
+      "Salio haliwezi kuwa chini ya sifuri."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("networks")
+      .add({
+
+        name:name,
+
+        balance:balance,
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Mtandao umeongezwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   EDIT NETWORK
+========================================================= */
+
+function editNetwork(id){
+
+  const n =
+    state.networks.find(
+      x=>x.id === id
+    );
+
+
+  if(!n) return;
+
+
+  openModal(
+
+    "Rekebisha " + n.name,
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA
+      </label>
+
+      <input
+        id="editNetworkName"
+        class="input"
+        value="${escapeHTML(n.name)}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        SALIO / FLOAT
+      </label>
+
+      <input
+        id="editNetworkBalance"
+        class="input"
+        type="number"
+        min="0"
+        value="${Number(n.balance || 0)}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveNetworkEdit('${id}')">
+
+      HIFADHI MABADILIKO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveNetworkEdit(id){
+
+  const name =
+    document.getElementById(
+      "editNetworkName"
+    ).value.trim();
+
+
+  const balance =
+    Number(
+      document.getElementById(
+        "editNetworkBalance"
+      ).value || 0
+    );
+
+
+  if(!name){
+
+    alert(
+      "Jina haliwezi kuwa tupu."
+    );
+
+    return;
+
+  }
+
+
+  if(balance < 0){
+
+    alert(
+      "Salio haliwezi kuwa chini ya sifuri."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("networks")
+      .doc(id)
+      .set({
+
+        name:name,
+
+        balance:balance,
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      },{
+        merge:true
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Mtandao umebadilishwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   REMOVE NETWORK
+========================================================= */
+
+async function removeNetwork(id){
+
+  const n =
+    state.networks.find(
+      x=>x.id === id
+    );
+
+
+  if(!n) return;
+
+
+  if(!confirm(
+    "Una uhakika unataka kufuta " +
+    n.name +
+    "?"
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("networks")
+      .doc(id)
+      .delete();
+
+
+    await loadData();
+
+
+    toast(
+      "Mtandao umefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufuta: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   BANKS
+========================================================= */
+
+function renderBanks(){
+
+  const el =
+    document.getElementById(
+      "banksList"
+    );
+
+
+  if(state.banks.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          🏦
+        </div>
+
+        Hakuna benki bado.<br>
+
+        Bonyeza <b>+ Ongeza</b> kuanza.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    state.banks.map(b=>`
+
+      <div class="source-row">
+
+        <div class="source-icon">
+          🏦
+        </div>
+
+        <div class="source-info">
+
+          <div class="source-name">
+
+            ${escapeHTML(b.name)}
+
+          </div>
+
+          <div class="source-type">
+            Akaunti ya Benki
+          </div>
+
+        </div>
+
+        <div class="source-balance">
+
+          ${fmt(b.balance)}
+
+        </div>
+
+        <div class="source-actions">
+
+          <button
+            class="mini-btn"
+            onclick="editBank('${b.id}')">
+
+            ✎
+
+          </button>
+
+          <button
+            class="mini-btn danger-btn"
+            onclick="removeBank('${b.id}')">
+
+            ×
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+function addBank(){
+
+  openModal(
+
+    "Ongeza Benki",
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA LA BENKI
+      </label>
+
+      <input
+        id="bankName"
+        class="input"
+        placeholder="Mfano NMB">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        SALIO
+      </label>
+
+      <input
+        id="bankBalance"
+        class="input"
+        type="number"
+        min="0"
+        placeholder="Mfano 500000">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveBank()">
+
+      HIFADHI BENKI
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveBank(){
+
+  const name =
+    document.getElementById(
+      "bankName"
+    ).value.trim();
+
+
+  const balance =
+    Number(
+      document.getElementById(
+        "bankBalance"
+      ).value || 0
+    );
+
+
+  if(!name){
+
+    alert(
+      "Weka jina la benki."
+    );
+
+    return;
+
+  }
+
+
+  if(balance < 0){
+
+    alert(
+      "Salio haliwezi kuwa chini ya sifuri."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("banks")
+      .add({
+
+        name:name,
+
+        balance:balance,
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Benki imeongezwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+function editBank(id){
+
+  const b =
+    state.banks.find(
+      x=>x.id === id
+    );
+
+
+  if(!b) return;
+
+
+  openModal(
+
+    "Rekebisha " + b.name,
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA
+      </label>
+
+      <input
+        id="editBankName"
+        class="input"
+        value="${escapeHTML(b.name)}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        SALIO
+      </label>
+
+      <input
+        id="editBankBalance"
+        class="input"
+        type="number"
+        min="0"
+        value="${Number(b.balance || 0)}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveBankEdit('${id}')">
+
+      HIFADHI MABADILIKO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveBankEdit(id){
+
+  const name =
+    document.getElementById(
+      "editBankName"
+    ).value.trim();
+
+
+  const balance =
+    Number(
+      document.getElementById(
+        "editBankBalance"
+      ).value || 0
+    );
+
+
+  if(!name){
+
+    alert(
+      "Jina haliwezi kuwa tupu."
+    );
+
+    return;
+
+  }
+
+
+  if(balance < 0){
+
+    alert(
+      "Salio haliwezi kuwa chini ya sifuri."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("banks")
+      .doc(id)
+      .set({
+
+        name:name,
+
+        balance:balance,
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      },{
+        merge:true
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Benki imebadilishwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+async function removeBank(id){
+
+  const b =
+    state.banks.find(
+      x=>x.id === id
+    );
+
+
+  if(!b) return;
+
+
+  if(!confirm(
+    "Una uhakika unataka kufuta " +
+    b.name +
+    "?"
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("banks")
+      .doc(id)
+      .delete();
+
+
+    await loadData();
+
+
+    toast(
+      "Benki imefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufuta: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   CASH
+========================================================= */
+
+function updateCashPrompt(){
+
+  const value =
+    prompt(
+      "Weka kiasi cha Cash/Taslimu:",
+      state.cash
+    );
+
+
+  if(value === null)
+    return;
+
+
+  const amount =
+    Number(value);
+
+
+  if(
+    !Number.isFinite(amount) ||
+    amount < 0
+  ){
+
+    alert(
+      "Kiasi si sahihi."
+    );
+
+    return;
+
+  }
+
+
+  updateCash(amount);
+
+}
+
+
+async function updateCash(value){
+
+  showLoading();
+
+
+  try{
+
+    state.cash =
+      Number(value || 0);
+
+
+    await saveBaseData();
+
+
+    render();
+
+
+    toast(
+      "Cash imebadilishwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   SOURCE HELPERS
+========================================================= */
+
+function getSourceName(source){
+
+  if(source === "cash"){
+
+    return "Cash / Taslimu";
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "network:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const n =
+      state.networks.find(
+        x=>x.id === id
+      );
+
+
+    return n
+      ? n.name
+      : "Mtandao";
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "bank:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const b =
+      state.banks.find(
+        x=>x.id === id
+      );
+
+
+    return b
+      ? b.name
+      : "Benki";
+
+  }
+
+
+  return "Chanzo";
+
+}
+
+
+/* =========================================================
+   SUBTRACT SOURCE
+========================================================= */
+
+async function subtractFromSource(
+  source,
+  amount
+){
+
+  amount =
+    Number(amount);
+
+
+  if(source === "cash"){
+
+    if(
+      state.cash < amount
+    ){
+
+      throw new Error(
+        "Cash haitoshi kufanya matumizi haya."
+      );
+
+    }
+
+
+    state.cash -=
+      amount;
+
+
+    await saveBaseData();
+
+
+    return;
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "network:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const n =
+      state.networks.find(
+        x=>x.id === id
+      );
+
+
+    if(!n){
+
+      throw new Error(
+        "Mtandao haujapatikana."
+      );
+
+    }
+
+
+    if(
+      Number(n.balance || 0)
+      < amount
+    ){
+
+      throw new Error(
+        n.name +
+        " haina salio la kutosha."
+      );
+
+    }
+
+
+    n.balance =
+      Number(n.balance || 0)
+      - amount;
+
+
+    await collectionRef("networks")
+      .doc(id)
+      .set({
+
+        balance:n.balance
+
+      },{
+        merge:true
+      });
+
+
+    return;
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "bank:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const b =
+      state.banks.find(
+        x=>x.id === id
+      );
+
+
+    if(!b){
+
+      throw new Error(
+        "Benki haijapatikana."
+      );
+
+    }
+
+
+    if(
+      Number(b.balance || 0)
+      < amount
+    ){
+
+      throw new Error(
+        b.name +
+        " haina salio la kutosha."
+      );
+
+    }
+
+
+    b.balance =
+      Number(b.balance || 0)
+      - amount;
+
+
+    await collectionRef("banks")
+      .doc(id)
+      .set({
+
+        balance:b.balance
+
+      },{
+        merge:true
+      });
+
+
+    return;
+
+  }
+
+
+  throw new Error(
+    "Chanzo cha matumizi si sahihi."
+  );
+
+}
+
+
+/* =========================================================
+   RESTORE SOURCE
+========================================================= */
+
+async function restoreToSource(
+  source,
+  amount
+){
+
+  amount =
+    Number(amount);
+
+
+  if(source === "cash"){
+
+    state.cash +=
+      amount;
+
+
+    await saveBaseData();
+
+
+    return;
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "network:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const n =
+      state.networks.find(
+        x=>x.id === id
+      );
+
+
+    if(!n)
+      return;
+
+
+    n.balance =
+      Number(n.balance || 0)
+      + amount;
+
+
+    await collectionRef("networks")
+      .doc(id)
+      .set({
+
+        balance:n.balance
+
+      },{
+        merge:true
+      });
+
+
+    return;
+
+  }
+
+
+  if(
+    source?.startsWith(
+      "bank:"
+    )
+  ){
+
+    const id =
+      source.split(":")[1];
+
+
+    const b =
+      state.banks.find(
+        x=>x.id === id
+      );
+
+
+    if(!b)
+      return;
+
+
+    b.balance =
+      Number(b.balance || 0)
+      + amount;
+
+
+    await collectionRef("banks")
+      .doc(id)
+      .set({
+
+        balance:b.balance
+
+      },{
+        merge:true
+      });
+
+  }
+
+}
+
+
+/* =========================================================
+   EXPENSE FORM
+========================================================= */
+
+function openExpense(){
+
+  let options = `
+
+    <option value="cash">
+      💵 Cash / Taslimu
+    </option>
+
+  `;
+
+
+  state.networks.forEach(n=>{
+
+    options += `
+
+      <option value="network:${n.id}">
+
+        📱 ${escapeHTML(n.name)}
+
+      </option>
+
+    `;
+
+  });
+
+
+  state.banks.forEach(b=>{
+
+    options += `
+
+      <option value="bank:${b.id}">
+
+        🏦 ${escapeHTML(b.name)}
+
+      </option>
+
+    `;
+
+  });
+
+
+  openModal(
+
+    "Ongeza Matumizi",
+
+    `
+
+    <div class="field">
+
+      <label>
+        KIASI
+      </label>
+
+      <input
+        id="expenseAmount"
+        class="input"
+        type="number"
+        min="1"
+        placeholder="Mfano 10000">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MATUMIZI HAYA YAMETUMIKA WAPI?
+      </label>
+
+      <input
+        id="expenseDescription"
+        class="input"
+        placeholder="Mfano Chakula, mafuta, kodi...">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        FEDHA ZIMETOKA WAPI?
+      </label>
+
+      <select id="expenseSource">
+
+        ${options}
+
+      </select>
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="expenseDate"
+        class="input"
+        type="date"
+        value="${today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="submitExpense()">
+
+      HIFADHI MATUMIZI
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+/* =========================================================
+   SUBMIT EXPENSE
+========================================================= */
+
+async function submitExpense(){
+
+  const amount =
+    Number(
+      document.getElementById(
+        "expenseAmount"
+      ).value
+    );
+
+
+  const description =
+    document.getElementById(
+      "expenseDescription"
+    ).value.trim();
+
+
+  const source =
+    document.getElementById(
+      "expenseSource"
+    ).value;
+
+
+  const date =
+    document.getElementById(
+      "expenseDate"
+    ).value ||
+    today();
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi."
+    );
+
+    return;
+
+  }
+
+
+  if(!description){
+
+    alert(
+      "Andika matumizi haya ni ya nini."
+    );
+
+    return;
+
+  }
+
+
+  if(!source){
+
+    alert(
+      "Chagua chanzo cha fedha."
+    );
+
+    return;
+
+  }
+
+
+  if(
+    state.mainCapital < amount
+  ){
+
+    alert(
+      "Mtaji mkuu hautoshi kwa matumizi haya."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await subtractFromSource(
+      source,
+      amount
+    );
+
+
+    state.mainCapital -=
+      amount;
+
+
+    await saveBaseData();
+
+
+    await collectionRef("expenses")
+      .add({
+
+        amount:amount,
+
+        description:description,
+
+        date:date,
+
+        source:source,
+
+        sourceName:
+          getSourceName(source),
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Matumizi yamehifadhiwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      error.message
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER EXPENSES
+========================================================= */
+
+function renderExpenses(){
+
+  const el =
+    document.getElementById(
+      "expensesList"
+    );
+
+
+  const list =
+    [...state.expenses]
+
+      .sort((a,b)=>
+        String(b.date || "")
+          .localeCompare(
+            String(a.date || "")
+          )
+      )
+
+      .slice(0,20);
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          💸
+        </div>
+
+        Hakuna matumizi yaliyohifadhiwa.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    list.map(e=>`
+
+      <div class="list-item">
+
+        <div class="list-main">
+
+          <div>
+
+            <div class="list-title">
+
+              ${escapeHTML(
+                e.description
+              )}
+
+            </div>
+
+            <div class="list-meta">
+
+              ${escapeHTML(
+                e.date || ""
+              )}
+
+            </div>
+
+          </div>
+
+
+          <div class="list-amount">
+
+            -${fmt(e.amount)}
+
+          </div>
+
+        </div>
+
+
+        <div class="list-bottom">
+
+          <span class="tag">
+
+            ${escapeHTML(
+              e.sourceName ||
+              getSourceName(e.source)
+            )}
+
+          </span>
+
+
+          <button
+            class="mini-btn danger-btn"
+            onclick="removeExpense('${e.id}')">
+
+            ×
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+/* =========================================================
+   REMOVE EXPENSE
+========================================================= */
+
+async function removeExpense(id){
+
+  const e =
+    state.expenses.find(
+      x=>x.id === id
+    );
+
+
+  if(!e)
+    return;
+
+
+  if(!confirm(
+    "Futa matumizi ya " +
+    fmt(e.amount) +
+    "?"
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    await restoreToSource(
+      e.source,
+      Number(e.amount || 0)
+    );
+
+
+    state.mainCapital +=
+      Number(e.amount || 0);
+
+
+    await saveBaseData();
+
+
+    await collectionRef("expenses")
+      .doc(id)
+      .delete();
+
+
+    await loadData();
+
+
+    toast(
+      "Matumizi yamefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      error.message
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   INCREASE
+========================================================= */
+
+function openIncrease(type){
+
+  ui.increaseType =
+    type;
+
+
+  let options = "";
+
+
+  if(type === "commission"){
+
+    state.networks.forEach(n=>{
+
+      options += `
+
+        <option value="network:${n.id}">
+
+          📱 ${escapeHTML(n.name)}
+
+        </option>
+
+      `;
+
+    });
+
+
+    state.banks.forEach(b=>{
+
+      options += `
+
+        <option value="bank:${b.id}">
+
+          🏦 ${escapeHTML(b.name)}
+
+        </option>
+
+      `;
+
+    });
+
+
+    if(!options){
+
+      options = `
+
+        <option value="">
+
+          Hakuna mtandao/benki
+
+        </option>
+
+      `;
+
+    }
+
+  }
+
+
+  openModal(
+
+    type === "commission"
+      ? "Ongeza Commission"
+      : "Ongeza Mtaji",
+
+    `
+
+    <div class="field">
+
+      <label>
+        KIASI
+      </label>
+
+      <input
+        id="increaseAmount"
+        class="input"
+        type="number"
+        min="1"
+        placeholder="Mfano 5000">
+
+    </div>
+
+
+    ${
+      type === "commission"
+
+      ?
+
+      `
+
+      <div class="field">
+
+        <label>
+          COMMISSION IMETOKA WAPI?
+        </label>
+
+        <select id="increaseSource">
+
+          ${options}
+
+        </select>
+
+      </div>
+
+      `
+
+      :
+
+      ""
+
+    }
+
+
+    <div class="field">
+
+      <label>
+        MAELEZO
+      </label>
+
+      <input
+        id="increaseDescription"
+        class="input"
+        placeholder="${
+          type === "commission"
+          ? "Mfano Commission ya leo"
+          : "Mfano Mtaji wa ziada"
+        }">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="increaseDate"
+        class="input"
+        type="date"
+        value="${today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="submitIncrease()">
+
+      HIFADHI ONGEZEKO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+/* =========================================================
+   SUBMIT INCREASE
+========================================================= */
+
+async function submitIncrease(){
+
+  const amount =
+    Number(
+      document.getElementById(
+        "increaseAmount"
+      ).value
+    );
+
+
+  const description =
+    document.getElementById(
+      "increaseDescription"
+    ).value.trim();
+
+
+  const date =
+    document.getElementById(
+      "increaseDate"
+    ).value ||
+    today();
+
+
+  let source = "";
+
+
+  if(
+    ui.increaseType ===
+    "commission"
+  ){
+
+    source =
+      document.getElementById(
+        "increaseSource"
+      )?.value || "";
+
+
+    if(!source){
+
+      alert(
+        "Chagua chanzo cha commission."
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi."
+    );
+
+    return;
+
+  }
+
+
+  if(!description){
+
+    alert(
+      "Weka maelezo."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    state.mainCapital +=
+      amount;
+
+
+    await saveBaseData();
+
+
+    await collectionRef("increases")
+      .add({
+
+        amount:amount,
+
+        type:
+          ui.increaseType,
+
+        description:
+          description,
+
+        date:
+          date,
+
+        source:
+          source,
+
+        sourceName:
+          source
+            ? getSourceName(source)
+            : "",
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Ongezeko limehifadhiwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER INCREASES
+========================================================= */
+
+function renderIncreases(){
+
+  const el =
+    document.getElementById(
+      "increasesList"
+    );
+
+
+  const list =
+    [...state.increases]
+
+      .sort((a,b)=>
+        String(b.date || "")
+          .localeCompare(
+            String(a.date || "")
+          )
+      )
+
+      .slice(0,20);
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          📈
+        </div>
+
+        Hakuna ongezeko lililohifadhiwa.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    list.map(i=>`
+
+      <div class="list-item">
+
+        <div class="list-main">
+
+          <div>
+
+            <div class="list-title">
+
+              ${escapeHTML(
+                i.description
+              )}
+
+            </div>
+
+            <div class="list-meta">
+
+              ${escapeHTML(
+                i.date || ""
+              )}
+
+            </div>
+
+          </div>
+
+
+          <div class="list-amount">
+
+            +${fmt(i.amount)}
+
+          </div>
+
+        </div>
+
+
+        <div class="list-bottom">
+
+          <span class="tag">
+
+            ${
+              i.type === "commission"
+              ? "COMMISSION"
+              : "MTAJI"
+            }
+
+            ${
+              i.sourceName
+              ? " • " +
+                escapeHTML(
+                  i.sourceName
+                )
+              : ""
+            }
+
+          </span>
+
+
+          <button
+            class="mini-btn danger-btn"
+            onclick="removeIncrease('${i.id}')">
+
+            ×
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+/* =========================================================
+   REMOVE INCREASE
+========================================================= */
+
+async function removeIncrease(id){
+
+  const item =
+    state.increases.find(
+      x=>x.id === id
+    );
+
+
+  if(!item)
+    return;
+
+
+  if(!confirm(
+    "Futa ongezeko la " +
+    fmt(item.amount) +
+    "?"
+  )) return;
+
+
+  if(
+    state.mainCapital <
+    Number(item.amount || 0)
+  ){
+
+    alert(
+      "Mtaji wa sasa hautoshi kuondoa ongezeko hili."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    state.mainCapital -=
+      Number(item.amount || 0);
+
+
+    await saveBaseData();
+
+
+    await collectionRef("increases")
+      .doc(id)
+      .delete();
+
+
+    await loadData();
+
+
+    toast(
+      "Ongezeko limefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   ADJUST CAPITAL
+========================================================= */
+
+function adjustCapital(){
+
+  const value =
+    prompt(
+      "Weka kiasi kipya cha Mtaji Mkuu:",
+      state.mainCapital
+    );
+
+
+  if(value === null)
+    return;
+
+
+  const amount =
+    Number(value);
+
+
+  if(
+    !Number.isFinite(amount) ||
+    amount < 0
+  ){
+
+    alert(
+      "Kiasi si sahihi."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  state.mainCapital =
+    amount;
+
+
+  saveBaseData()
+
+    .then(()=>{
+
+      render();
+
+      toast(
+        "Mtaji umebadilishwa."
+      );
+
+    })
+
+    .catch(error=>{
+
+      alert(
+        "Imeshindikana: " +
+        errorMessage(error)
+      );
+
+    })
+
+    .finally(()=>{
+
+      hideLoading();
+
+    });
+
+}
+
+
+/* =========================================================
+   TOTALS
+========================================================= */
+
+function getTotals(){
+
+  const networks =
+    state.networks.reduce(
+
+      (sum,n)=>
+        sum +
+        Number(n.balance || 0),
+
+      0
+
+    );
+
+
+  const banks =
+    state.banks.reduce(
+
+      (sum,b)=>
+        sum +
+        Number(b.balance || 0),
+
+      0
+
+    );
+
+
+  const cash =
+    Number(state.cash || 0);
+
+
+  const totalOnHand =
+    networks +
+    banks +
+    cash;
+
+
+  const capital =
+    Number(state.mainCapital || 0);
+
+
+  const difference =
+    totalOnHand -
+    capital;
+
+
+  return {
+
+    networks,
+
+    banks,
+
+    cash,
+
+    totalOnHand,
+
+    capital,
+
+    difference
+
+  };
+
+}
+
+
+/* =========================================================
+   CLOSING PREVIEW
+========================================================= */
+
+function renderClosingPreview(){
+
+  const t =
+    getTotals();
+
+
+  const balanced =
+    Math.abs(
+      t.difference
+    ) < 0.01;
+
+
+  document.getElementById(
+    "closingPreview"
+  ).innerHTML = `
+
+    <div class="closing-card">
+
+      <div class="closing-row">
+
+        <span>
+          Tarehe ya siku
+        </span>
+
+        <strong>
+          ${formatDateSwahili(today())}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Mtandao
+        </span>
+
+        <strong>
+          ${fmt(t.networks)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Benki
+        </span>
+
+        <strong>
+          ${fmt(t.banks)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Cash
+        </span>
+
+        <strong>
+          ${fmt(t.cash)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Jumla Iliyopo
+        </span>
+
+        <strong>
+          ${fmt(t.totalOnHand)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Mtaji Mkuu
+        </span>
+
+        <strong>
+          ${fmt(t.capital)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Tofauti
+        </span>
+
+        <strong style="
+          color:${
+            balanced
+            ? "var(--green)"
+            : "var(--danger)"
+          }
+        ">
+
+          ${fmt(
+            Math.abs(
+              t.difference
+            )
+          )}
+
+        </strong>
+
+      </div>
+
+
+      <div class="
+        closing-status
+        ${
+          balanced
+          ? "status-ok"
+          : "status-bad"
+        }
+      ">
+
+        ${
+          balanced
+
+          ? "✓ HESABU ZIMESAWAZIKA"
+
+          : "⚠ HESABU HAZIJASAWAZIKA"
+
+        }
+
+      </div>
+
+
+      <button
+        class="primary-btn"
+        style="margin-top:12px"
+        onclick="closeToday()">
+
+        🔒 FUNGA HESABU YA LEO
+
+      </button>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   CLOSE TODAY
+========================================================= */
+
+async function closeToday(){
+
+  const t =
+    getTotals();
+
+
+  const date =
+    today();
+
+
+  const balanced =
+    Math.abs(
+      t.difference
+    ) < 0.01;
+
+
+  if(!confirm(
+
+    "Funga hesabu ya leo " +
+    date +
+    "?\n\n" +
+
+    "Jumla iliyopo: " +
+    fmt(t.totalOnHand) +
+
+    "\nMtaji: " +
+    fmt(t.capital) +
+
+    "\nTofauti: " +
+    fmt(
+      Math.abs(
+        t.difference
+      )
+    )
+
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    const expensesToday =
+      state.expenses
+
+        .filter(e=>
+          e.date === date
+        )
+
+        .map(e=>({
+
+          amount:
+            Number(e.amount || 0),
+
+          description:
+            e.description || "",
+
+          source:
+            e.source || "",
+
+          sourceName:
+            e.sourceName || ""
+
+        }));
+
+
+    const increasesToday =
+      state.increases
+
+        .filter(i=>
+          i.date === date
+        )
+
+        .map(i=>({
+
+          amount:
+            Number(i.amount || 0),
+
+          type:
+            i.type || "",
+
+          description:
+            i.description || "",
+
+          source:
+            i.source || "",
+
+          sourceName:
+            i.sourceName || ""
+
+        }));
+
+
+    const networksSnapshot =
+      state.networks.map(n=>({
+
+        id:n.id,
+
+        name:n.name,
+
+        balance:
+          Number(n.balance || 0)
+
+      }));
+
+
+    const banksSnapshot =
+      state.banks.map(b=>({
+
+        id:b.id,
+
+        name:b.name,
+
+        balance:
+          Number(b.balance || 0)
+
+      }));
+
+
+    const closingData = {
+
+      date:date,
+
+      automatic:false,
+
+      diff:
+        Number(t.difference),
+
+      totalOnHand:
+        Number(t.totalOnHand),
+
+      mainCapital:
+        Number(t.capital),
+
+      cash:
+        Number(t.cash),
+
+      networksSnapshot,
+
+      banksSnapshot,
+
+      expensesToday,
+
+      increasesToday,
+
+      balanced,
+
+      closedAt:
+        firebase.firestore.FieldValue
+          .serverTimestamp()
+
+    };
+
+
+    await collectionRef("closings")
+      .doc(date)
+      .set(closingData);
+
+
+    await userRef().set({
+
+      lastActiveDay:date,
+
+      updatedAt:
+        firebase.firestore.FieldValue
+          .serverTimestamp()
+
+    },{
+      merge:true
+    });
+
+
+    if(currentUser.userData){
+
+      currentUser.userData.lastActiveDay =
+        date;
+
+    }
+
+
+    await loadData();
+
+
+    toast(
+
+      balanced
+
+      ? "Hesabu zimefungwa na zimesawazika."
+
+      : "Hesabu zimefungwa lakini kuna tofauti."
+
+    );
+
+
+    setTimeout(()=>{
+
+      downloadClosingReport(date);
+
+    },400);
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufunga hesabu: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   CLOSINGS HISTORY
+========================================================= */
+
+function renderClosings(){
+
+  const el =
+    document.getElementById(
+      "closingsList"
+    );
+
+
+  const list =
+    [...state.closings]
+
+      .sort((a,b)=>
+        String(b.date || "")
+          .localeCompare(
+            String(a.date || "")
+          )
+      );
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          🗓️
+        </div>
+
+        Hakuna historia ya kufunga hesabu.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    list.map(c=>`
+
+      <div class="list-item">
+
+        <div class="list-main">
+
+          <div>
+
+            <div class="list-title">
+
+              ${escapeHTML(
+                formatDateSwahili(
+                  c.date || ""
+                )
+              )}
+
+            </div>
+
+
+            <div class="list-meta">
+
+              Mtaji ${fmt(c.mainCapital)}
+
+              ${
+                c.automatic
+                ? " • Auto"
+                : " • Manual"
+              }
+
+            </div>
+
+          </div>
+
+
+          <div class="list-amount">
+
+            ${fmt(c.totalOnHand)}
+
+          </div>
+
+        </div>
+
+
+        <div class="list-bottom">
+
+          <span class="tag">
+
+            ${
+              Math.abs(
+                Number(c.diff || 0)
+              ) < 0.01
+
+              ? "✓ IMESAWAZISHWA"
+
+              : "⚠ TOFAUTI " +
+                fmt(
+                  Math.abs(
+                    Number(c.diff || 0)
+                  )
+                )
+
+            }
+
+          </span>
+
+
+          <button
+            class="pdf-btn"
+            onclick="downloadClosingReport('${c.date}')">
+
+            PDF
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+/* =========================================================
+   PDF DOWNLOAD
+========================================================= */
+
+async function downloadClosingReport(
+  dateId
+){
+
+  let closing =
+    state.closings.find(
+      x=>x.id === dateId
+    );
+
+
+  if(!closing){
+
+    try{
+
+      const doc =
+        await collectionRef(
+          "closings"
+        )
+        .doc(dateId)
+        .get();
+
+
+      if(!doc.exists){
+
+        alert(
+          "Report haijapatikana."
+        );
+
+        return;
+
+      }
+
+
+      closing = {
+
+        id:doc.id,
+
+        ...doc.data()
+
+      };
+
+
+    }catch(error){
+
+      alert(
+        "Imeshindikana kupata report: " +
+        errorMessage(error)
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  renderClosingPDF(
+    closing
+  );
+
+}
+
+
+/* =========================================================
+   PDF RENDER
+========================================================= */
+
+function renderClosingPDF(c){
+
+  if(!window.jspdf){
+
+    alert(
+      "PDF library haijapakia. Hakikisha internet ipo kisha jaribu tena."
+    );
+
+    return;
+
+  }
+
+
+  const {
+    jsPDF
+  } =
+    window.jspdf;
+
+
+  const doc =
+    new jsPDF({
+
+      orientation:"portrait",
+
+      unit:"pt",
+
+      format:"a4"
+
+    });
+
+
+  const pageWidth =
+    doc.internal.pageSize
+      .getWidth();
+
+
+  const pageHeight =
+    doc.internal.pageSize
+      .getHeight();
+
+
+  let y = 45;
+
+
+  function money(v){
+
+    return fmt(v);
+
+  }
+
+
+  function line(){
+
+    doc.setDrawColor(
+      210,
+      220,
+      214
+    );
+
+
+    doc.line(
+
+      40,
+
+      y,
+
+      pageWidth - 40,
+
+      y
+
+    );
+
+
+    y += 14;
+
+  }
+
+
+  function text(
+    value,
+    x,
+    yy,
+    size=10,
+    bold=false
+  ){
+
+    doc.setFont(
+
+      "helvetica",
+
+      bold
+        ? "bold"
+        : "normal"
+
+    );
+
+
+    doc.setFontSize(
+      size
+    );
+
+
+    doc.text(
+      String(value),
+      x,
+      yy
+    );
+
+  }
+
+
+  function checkPage(){
+
+    if(
+      y >
+      pageHeight - 65
+    ){
+
+      doc.addPage();
+
+      y = 45;
+
+    }
+
+  }
+
+
+  /* =======================================================
+     HEADER
+  ======================================================== */
+
+  text(
+    "GODEN TECH",
+    40,
+    y,
+    10,
+    true
+  );
+
+  y += 16;
+
+
+  text(
+    "WAKALA",
+    40,
+    y,
+    22,
+    true
+  );
+
+  y += 17;
+
+
+  text(
+    "KITABU CHA MTAJI",
+    40,
+    y,
+    10,
+    false
+  );
+
+  y += 15;
+
+
+  text(
+    "RIPOTI YA KUFUNGA HESABU",
+    40,
+    y,
+    11,
+    true
+  );
+
+  y += 17;
+
+
+  text(
+    "Tarehe: " +
+    formatDateSwahili(
+      c.date || ""
+    ),
+    40,
+    y,
+    9,
+    false
+  );
+
+  y += 15;
+
+
+  text(
+    c.automatic
+      ? "Aina: AUTO-CLOSE"
+      : "Aina: KUFUNGA MANUAL",
+    40,
+    y,
+    8,
+    false
+  );
+
+  y += 15;
+
+
+  line();
+
+
+  /* =======================================================
+     STATUS
+  ======================================================== */
+
+  const balanced =
+    Math.abs(
+      Number(c.diff || 0)
+    ) < 0.01;
+
+
+  text(
+
+    balanced
+
+      ? "✓ HESABU IMESAWAZISHWA"
+
+      : "⚠ HESABU HAIJASAWAZISHWA",
+
+    40,
+
+    y,
+
+    11,
+
+    true
+
+  );
+
+  y += 22;
+
+
+  /* =======================================================
+     SUMMARY
+  ======================================================== */
+
+  text(
+    "MUHTASARI",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 18;
+
+
+  text(
+    "Mtaji Mkuu:",
+    50,
+    y,
+    9
+  );
+
+
+  text(
+    money(c.mainCapital),
+    300,
+    y,
+    9,
+    true
+  );
+
+
+  y += 16;
+
+
+  text(
+    "Jumla Iliyopo:",
+    50,
+    y,
+    9
+  );
+
+
+  text(
+    money(c.totalOnHand),
+    300,
+    y,
+    9,
+    true
+  );
+
+
+  y += 16;
+
+
+  text(
+    "Tofauti:",
+    50,
+    y,
+    9
+  );
+
+
+  text(
+    money(
+      Math.abs(
+        c.diff || 0
+      )
+    ),
+    300,
+    y,
+    9,
+    true
+  );
+
+
+  y += 23;
+
+
+  line();
+
+
+  /* =======================================================
+     NETWORKS
+  ======================================================== */
+
+  text(
+    "MITANDAO",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 17;
+
+
+  const networks =
+    c.networksSnapshot ||
+    [];
+
+
+  if(
+    networks.length === 0
+  ){
+
+    text(
+      "Hakuna mitandao.",
+      50,
+      y,
+      9
+    );
+
+    y += 16;
+
+  }else{
+
+    networks.forEach(n=>{
+
+      checkPage();
+
+
+      text(
+        n.name || "",
+        50,
+        y,
+        9
+      );
+
+
+      text(
+        money(n.balance),
+        300,
+        y,
+        9,
+        true
+      );
+
+
+      y += 15;
+
+    });
+
+  }
+
+
+  y += 8;
+
+  line();
+
+
+  /* =======================================================
+     BANKS
+  ======================================================== */
+
+  text(
+    "BENKI",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 17;
+
+
+  const banks =
+    c.banksSnapshot ||
+    [];
+
+
+  if(
+    banks.length === 0
+  ){
+
+    text(
+      "Hakuna benki.",
+      50,
+      y,
+      9
+    );
+
+    y += 16;
+
+  }else{
+
+    banks.forEach(b=>{
+
+      checkPage();
+
+
+      text(
+        b.name || "",
+        50,
+        y,
+        9
+      );
+
+
+      text(
+        money(b.balance),
+        300,
+        y,
+        9,
+        true
+      );
+
+
+      y += 15;
+
+    });
+
+  }
+
+
+  y += 8;
+
+  line();
+
+
+  /* =======================================================
+     CASH
+  ======================================================== */
+
+  text(
+    "CASH / TASLIMU",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 18;
+
+
+  text(
+    money(c.cash),
+    50,
+    y,
+    10,
+    true
+  );
+
+
+  y += 23;
+
+  line();
+
+
+  /* =======================================================
+     EXPENSES
+  ======================================================== */
+
+  text(
+    "MATUMIZI YA LEO",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 17;
+
+
+  const expenses =
+    c.expensesToday ||
+    [];
+
+
+  if(
+    expenses.length === 0
+  ){
+
+    text(
+      "Hakuna matumizi.",
+      50,
+      y,
+      9
+    );
+
+    y += 16;
+
+  }else{
+
+    expenses.forEach(e=>{
+
+      checkPage();
+
+
+      text(
+        e.description || "",
+        50,
+        y,
+        9
+      );
+
+
+      text(
+        "-" +
+        money(e.amount),
+        300,
+        y,
+        9,
+        true
+      );
+
+
+      y += 13;
+
+
+      if(e.sourceName){
+
+        text(
+          "Chanzo: " +
+          e.sourceName,
+          60,
+          y,
+          7
+        );
+
+
+        y += 13;
+
+      }
+
+    });
+
+  }
+
+
+  y += 7;
+
+  line();
+
+
+  /* =======================================================
+     INCREASES
+  ======================================================== */
+
+  text(
+    "ONGEZEKO LA LEO",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 17;
+
+
+  const increases =
+    c.increasesToday ||
+    [];
+
+
+  if(
+    increases.length === 0
+  ){
+
+    text(
+      "Hakuna ongezeko.",
+      50,
+      y,
+      9
+    );
+
+    y += 16;
+
+  }else{
+
+    increases.forEach(i=>{
+
+      checkPage();
+
+
+      text(
+        i.description || "",
+        50,
+        y,
+        9
+      );
+
+
+      text(
+        "+" +
+        money(i.amount),
+        300,
+        y,
+        9,
+        true
+      );
+
+
+      y += 13;
+
+
+      if(i.sourceName){
+
+        text(
+          "Chanzo: " +
+          i.sourceName,
+          60,
+          y,
+          7
+        );
+
+
+        y += 13;
+
+      }
+
+    });
+
+  }
+
+
+  /* =======================================================
+     FOOTER
+  ======================================================== */
+
+  const pages =
+    doc.internal
+      .getNumberOfPages();
+
+
+  for(
+    let i=1;
+    i<=pages;
+    i++
+  ){
+
+    doc.setPage(i);
+
+
+    doc.setFont(
+      "helvetica",
+      "normal"
+    );
+
+
+    doc.setFontSize(7);
+
+
+    doc.text(
+      "Goden Tech • godenvegula@gmail.com",
+      40,
+      pageHeight - 30
+    );
+
+
+    doc.text(
+      "© 2026 Goden Tech. All Rights Reserved.",
+      40,
+      pageHeight - 18
+    );
+
+
+    doc.text(
+      "Ukurasa " +
+      i +
+      " / " +
+      pages,
+      pageWidth - 100,
+      pageHeight - 25
+    );
+
+  }
+
+
+  doc.save(
+
+    "Wakala_Report_" +
+    (c.date || today()) +
+    ".pdf"
+
+  );
+
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+function openModal(
+  title,
+  content
+){
+
+  document.getElementById(
+    "modalTitle"
+  ).textContent =
+    title;
+
+
+  document.getElementById(
+    "modalContent"
+  ).innerHTML =
+    content;
+
+
+  document.getElementById(
+    "modal"
+  ).classList.remove(
+    "hidden"
+  );
+
+}
+
+
+function closeModal(){
+
+  document.getElementById(
+    "modal"
+  ).classList.add(
+    "hidden"
+  );
+
+}
+
+
+document.getElementById(
+  "modal"
+).addEventListener(
+  "click",
+  function(e){
+
+    if(
+      e.target === this
+    ){
+
+      closeModal();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   FAB
+========================================================= */
+
+function toggleFab(){
+
+  document.getElementById(
+    "fabMenu"
+  ).classList.toggle(
+    "hidden"
+  );
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function goTo(
+  id,
+  button
+){
+
+  const el =
+    document.getElementById(id);
+
+
+  if(el){
+
+    el.scrollIntoView({
+
+      behavior:"smooth",
+
+      block:"start"
+
+    });
+
+  }
+
+
+  document
+    .querySelectorAll(".nav-btn")
+    .forEach(btn=>
+      btn.classList.remove(
+        "active"
+      )
+    );
+
+
+  if(button){
+
+    button.classList.add(
+      "active"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+function toggleDark(){
+
+  document.body.classList.toggle(
+    "dark"
+  );
+
+
+  localStorage.setItem(
+
+    "WakalaDark",
+
+    document.body.classList.contains(
+      "dark"
+    )
+      ? "1"
+      : "0"
+
+  );
+
+}
+
+
+if(
+  localStorage.getItem(
+    "WakalaDark"
+  ) === "1"
+){
+
+  document.body.classList.add(
+    "dark"
+  );
+
+}
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+auth.onAuthStateChanged(
+  async user=>{
+
+    if(user){
+
+      currentUser =
+        user;
+
+
+      document.getElementById(
+        "authScreen"
+      ).classList.add(
+        "hidden"
+      );
+
+
+      document.getElementById(
+        "app"
+      ).classList.remove(
+        "hidden"
+      );
+
+
+      await loadData();
+
+
+    }else{
+
+      currentUser =
+        null;
+
+
+      stopAutoCloseWatcher();
+
+
+      document.getElementById(
+        "authScreen"
+      ).classList.remove(
+        "hidden"
+      );
+
+
+      document.getElementById(
+        "app"
+      ).classList.add(
+        "hidden"
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   ESCAPE KEY
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  function(e){
+
+    if(
+      e.key === "Escape"
+    ){
+
+      closeModal();
+
+    }
+
+  }
+);
+
+</script>
+
+</body>
+  </html>
