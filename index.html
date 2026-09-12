@@ -652,6 +652,11 @@ textarea:focus{
   color:#a86c00;
 }
 
+.status-over{
+  background:#eaf3fb;
+  color:var(--blue);
+}
+
 /* =========================================================
    LIST
 ========================================================= */
@@ -1012,6 +1017,10 @@ body.dark .status-near{
   background:#3a311d;
 }
 
+body.dark .status-over{
+  background:#1c2c3a;
+}
+
 body.dark .auth-card,
 body.dark .loader-card{
   background:var(--card);
@@ -1019,6 +1028,113 @@ body.dark .loader-card{
 
 body.dark .day-badge{
   background:#193528;
+}
+
+/* =========================================================
+   LIPA MODULE (independent)
+========================================================= */
+
+#lipaScreen{
+  min-height:100vh;
+  padding-bottom:40px;
+}
+
+.lipa-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:27px;
+  padding:22px;
+  color:white;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(255,255,255,.18),transparent 30%),
+    linear-gradient(145deg,#3178d4,#1c4a86);
+  box-shadow:0 18px 35px rgba(28,74,134,.22);
+  margin-bottom:15px;
+}
+
+.lipa-card:after{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  right:-80px;
+  bottom:-100px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);
+}
+
+.lipa-mini-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:14px;
+}
+
+.lipa-mini-box{
+  background:rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:11px;
+}
+
+.lipa-mini-label{
+  font-size:9px;
+  opacity:.8;
+  font-weight:700;
+}
+
+.lipa-mini-value{
+  font-size:15px;
+  font-weight:800;
+  margin-top:4px;
+}
+
+.lipa-period-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:16px;
+  box-shadow:var(--shadow);
+  margin-bottom:15px;
+}
+
+.lipa-period-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.lipa-period-value{
+  font-size:22px;
+  font-weight:800;
+  margin-top:6px;
+}
+
+.lipa-period-value.negative{
+  color:var(--danger);
+}
+
+.lipa-period-value.positive{
+  color:var(--green);
+}
+
+.lipa-time-badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:8px;
+  background:#eaf3fb;
+  color:var(--blue);
+  font-size:9px;
+  font-weight:800;
+}
+
+body.dark .lipa-time-badge{
+  background:#1c2c3a;
+}
+
+body.dark .lipa-period-card{
+  background:var(--card);
 }
 
 @media(min-width:700px){
@@ -1233,6 +1349,15 @@ body.dark .day-badge{
 
           <button
             class="icon-btn"
+            onclick="openLipa()"
+            title="Lipa">
+
+            Ⓛ
+
+          </button>
+
+          <button
+            class="icon-btn"
             onclick="toggleDark()"
             title="Dark mode">
 
@@ -1411,11 +1536,32 @@ body.dark .day-badge{
           <div class="summary-card">
 
             <div class="summary-icon">
+              🧾
+            </div>
+
+            <div class="summary-title">
+              MADENI
+            </div>
+
+            <div
+              id="debtSummary"
+              class="summary-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+
+          <div class="summary-card" style="grid-column:1 / -1">
+
+            <div class="summary-icon">
               ✓
             </div>
 
             <div class="summary-title">
-              JUMLA ILIYOPO
+              JUMLA ILIYOPO (NA MADENI)
             </div>
 
             <div
@@ -1604,6 +1750,33 @@ body.dark .day-badge{
       </section>
 
 
+      <!-- DEBTS -->
+
+      <section
+        id="debts"
+        class="section">
+
+        <div class="section-head">
+
+          <h3>
+            🧾 Madeni
+          </h3>
+
+          <button onclick="addDebt()">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="debtsList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
       <!-- EXPENSES -->
 
       <section
@@ -1766,6 +1939,14 @@ body.dark .day-badge{
 
     </button>
 
+    <button
+      class="fab-option"
+      onclick="addDebt();toggleFab()">
+
+      🧾 Ongeza Deni
+
+    </button>
+
   </div>
 
 
@@ -1816,13 +1997,13 @@ body.dark .day-badge{
 
       <button
         class="nav-btn"
-        onclick="goTo('expenses',this)">
+        onclick="goTo('debts',this)">
 
         <span class="nav-icon">
-          💸
+          🧾
         </span>
 
-        Matumizi
+        Madeni
 
       </button>
 
@@ -1842,6 +2023,274 @@ body.dark .day-badge{
     </div>
 
   </nav>
+
+</div>
+
+
+<!-- =========================================================
+     LIPA (independent module)
+========================================================= -->
+
+<div id="lipaScreen" class="hidden">
+
+  <div class="app-wrap">
+
+    <header class="topbar">
+
+      <div class="topbar-inner">
+
+        <div class="brand">
+
+          <button
+            class="icon-btn"
+            onclick="closeLipaScreen()"
+            title="Rudi">
+
+            ←
+
+          </button>
+
+          <div class="brand-text">
+
+            <h1>
+              LIPA
+            </h1>
+
+            <small>
+              Faida na Matumizi ya Lipa
+            </small>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+
+
+    <main class="content">
+
+      <div class="welcome">
+
+        <div
+          id="lipaDayBadge"
+          class="day-badge">
+
+          📅 Siku ya leo: -
+
+        </div>
+
+      </div>
+
+
+      <!-- TODAY SUMMARY -->
+
+      <div class="lipa-card">
+
+        <div class="capital-top">
+
+          <div class="capital-label">
+            SALIO LA LEO (LIPA)
+          </div>
+
+        </div>
+
+
+        <div
+          id="lipaTodaySalio"
+          class="capital-value">
+
+          TSh 0
+
+        </div>
+
+
+        <div class="capital-sub">
+
+          Faida ya leo ukitoa matumizi ya lipa ya leo
+
+        </div>
+
+
+        <div class="lipa-mini-grid">
+
+          <div class="lipa-mini-box">
+
+            <div class="lipa-mini-label">
+              FAIDA YA LEO
+            </div>
+
+            <div
+              id="lipaTodayFaida"
+              class="lipa-mini-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+
+          <div class="lipa-mini-box">
+
+            <div class="lipa-mini-label">
+              MATUMIZI YA LEO
+            </div>
+
+            <div
+              id="lipaTodayMatumizi"
+              class="lipa-mini-value">
+
+              TSh 0
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- PERIOD (MONTH) RUNNING TOTAL -->
+
+      <div class="lipa-period-card">
+
+        <div class="lipa-period-top">
+
+          <span id="lipaPeriodRange">
+            Mzunguko wa sasa: -
+          </span>
+
+        </div>
+
+        <div class="capital-label" style="color:var(--muted)">
+          BAKI KUU YA LIPA (HADI SASA)
+        </div>
+
+        <div
+          id="lipaPeriodBaki"
+          class="lipa-period-value">
+
+          TSh 0
+
+        </div>
+
+      </div>
+
+
+      <!-- FAIDA LIST -->
+
+      <section class="section">
+
+        <div class="section-head">
+
+          <h3>
+            💹 Faida ya Lipa (Leo)
+          </h3>
+
+          <button onclick="openLipaEntry('faida')">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="lipaFaidaList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- MATUMIZI LIST -->
+
+      <section class="section">
+
+        <div class="section-head">
+
+          <h3>
+            💸 Matumizi ya Lipa (Leo)
+          </h3>
+
+          <button onclick="openLipaEntry('matumizi')">
+            + Ongeza
+          </button>
+
+        </div>
+
+        <div
+          id="lipaMatumiziList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <!-- CLOSE MONTH -->
+
+      <section class="section">
+
+        <div class="section-head">
+
+          <h3>
+            📊 Funga Hesabu ya Mwezi
+          </h3>
+
+          <button onclick="closeLipaMonth()">
+            Funga Mwezi
+          </button>
+
+        </div>
+
+        <div
+          class="panel"
+          id="lipaClosingPreview">
+
+        </div>
+
+      </section>
+
+
+      <!-- HISTORY -->
+
+      <section class="section">
+
+        <div class="section-head">
+
+          <h3>
+            🗓️ Historia ya Miezi Iliyofungwa
+          </h3>
+
+        </div>
+
+        <div
+          id="lipaClosingsList"
+          class="panel">
+
+        </div>
+
+      </section>
+
+
+      <footer class="app-footer">
+
+        <strong>Goden Tech</strong><br>
+
+        LIPA — Sehemu Huru ya Faida na Matumizi<br>
+
+        godenvegula@gmail.com<br>
+
+        © 2026 Goden Tech. All Rights Reserved.
+
+      </footer>
+
+    </main>
+
+  </div>
 
 </div>
 
@@ -1956,11 +2405,25 @@ let state = {
 
   cash:0,
 
+  debts:[],
+
   expenses:[],
 
   increases:[],
 
-  closings:[]
+  closings:[],
+
+  lipa:{
+
+    loaded:false,
+
+    periodStart:"",
+
+    entries:[],
+
+    closings:[]
+
+  }
 
 };
 
@@ -2052,6 +2515,23 @@ function yesterday(){
       .padStart(2,"0");
 
   return `${y}-${m}-${day}`;
+
+}
+
+
+function nowTime(){
+
+  const d = new Date();
+
+  const h =
+    String(d.getHours())
+      .padStart(2,"0");
+
+  const m =
+    String(d.getMinutes())
+      .padStart(2,"0");
+
+  return `${h}:${m}`;
 
 }
 
@@ -2499,6 +2979,8 @@ async function loadData(){
 
       banksSnap,
 
+      debtsSnap,
+
       expensesSnap,
 
       increasesSnap,
@@ -2510,6 +2992,8 @@ async function loadData(){
       collectionRef("networks").get(),
 
       collectionRef("banks").get(),
+
+      collectionRef("debts").get(),
 
       collectionRef("expenses").get(),
 
@@ -2532,6 +3016,16 @@ async function loadData(){
 
     state.banks =
       banksSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.debts =
+      debtsSnap.docs.map(d=>({
 
         id:d.id,
 
@@ -3045,6 +3539,19 @@ async function autoCloseDay(date){
     }));
 
 
+  const debtsSnapshot =
+    state.debts.map(x=>({
+
+      id:x.id,
+
+      name:x.name,
+
+      amount:
+        Number(x.amount || 0)
+
+    }));
+
+
   const closingData = {
 
     date:date,
@@ -3063,11 +3570,17 @@ async function autoCloseDay(date){
     cash:
       Number(t.cash),
 
+    debtsTotal:
+      Number(t.debts),
+
     networksSnapshot:
       networksSnapshot,
 
     banksSnapshot:
       banksSnapshot,
+
+    debtsSnapshot:
+      debtsSnapshot,
 
     expensesToday:
       expensesToday,
@@ -3161,6 +3674,8 @@ function render(){
 
   renderBanks();
 
+  renderDebts();
+
   renderExpenses();
 
   renderIncreases();
@@ -3212,78 +3727,54 @@ function updateWelcome(){
 
 function renderDashboard(){
 
-  const networks =
-    state.networks.reduce(
-
-      (sum,n)=>
-        sum +
-        Number(n.balance || 0),
-
-      0
-
-    );
-
-
-  const banks =
-    state.banks.reduce(
-
-      (sum,b)=>
-        sum +
-        Number(b.balance || 0),
-
-      0
-
-    );
-
-
-  const total =
-    networks +
-    banks +
-    Number(state.cash || 0);
-
-
-  const capital =
-    Number(state.mainCapital || 0);
-
-
-  const difference =
-    total - capital;
+  const t =
+    getTotals();
 
 
   document.getElementById(
     "mainCapital"
   ).textContent =
-    fmt(capital);
+    fmt(t.capital);
 
 
   document.getElementById(
     "cashSummary"
   ).textContent =
-    fmt(state.cash);
+    fmt(t.cash);
 
 
   document.getElementById(
     "networkSummary"
   ).textContent =
-    fmt(networks);
+    fmt(t.networks);
 
 
   document.getElementById(
     "bankSummary"
   ).textContent =
-    fmt(banks);
+    fmt(t.banks);
+
+
+  document.getElementById(
+    "debtSummary"
+  ).textContent =
+    fmt(t.debts);
 
 
   document.getElementById(
     "totalSummary"
   ).textContent =
-    fmt(total);
+    fmt(t.totalOnHand);
 
 
   document.getElementById(
     "cashValue"
   ).textContent =
     fmt(state.cash);
+
+
+  const difference =
+    t.difference;
 
 
   /*
@@ -3301,13 +3792,13 @@ function renderDashboard(){
   let closeness = 0;
 
 
-  if(capital > 0){
+  if(t.capital > 0){
 
     closeness =
       100 -
       (
         Math.abs(difference) /
-        capital
+        t.capital
       ) * 100;
 
     closeness =
@@ -3322,7 +3813,7 @@ function renderDashboard(){
   }else{
 
     closeness =
-      total === 0
+      t.totalOnHand === 0
         ? 100
         : 0;
 
@@ -3405,7 +3896,34 @@ function renderDashboard(){
 
 
   /*
-    VERY CLOSE
+    SURPLUS (POSITIVE) — total imezidi mtaji
+  */
+
+  if(difference > 0){
+
+    caption.textContent =
+      "Jumla iliyopo IMEZIDI Mtaji Mkuu";
+
+
+    status.className =
+      "closing-status status-over";
+
+
+    status.textContent =
+      "🔵 IMEZIDI KWA • +" +
+      fmt(difference);
+
+
+    capitalStatus.textContent =
+      "IMEZIDI";
+
+    return;
+
+  }
+
+
+  /*
+    DEFICIT (NEGATIVE) — bado kiasi fulani ili kulingana na mtaji
   */
 
   if(closeness >= 95){
@@ -3419,7 +3937,7 @@ function renderDashboard(){
 
 
     status.textContent =
-      "🟡 INAKARIBIA KUSAWAZIKA • " +
+      "🟡 PUNGUFU KWA • -" +
       fmt(Math.abs(difference));
 
 
@@ -3430,10 +3948,6 @@ function renderDashboard(){
 
   }
 
-
-  /*
-    MEDIUM
-  */
 
   if(closeness >= 75){
 
@@ -3446,7 +3960,7 @@ function renderDashboard(){
 
 
     status.textContent =
-      "🟠 BADO KUNA TOFAUTI • " +
+      "🟠 PUNGUFU KWA • -" +
       fmt(Math.abs(difference));
 
 
@@ -3458,10 +3972,6 @@ function renderDashboard(){
   }
 
 
-  /*
-    FAR
-  */
-
   caption.textContent =
     "Hesabu iko mbali na Mtaji Mkuu";
 
@@ -3471,7 +3981,7 @@ function renderDashboard(){
 
 
   status.textContent =
-    "🔴 HAIJASAWAZISHWA • " +
+    "🔴 PUNGUFU KWA • -" +
     fmt(Math.abs(difference));
 
 
@@ -4413,6 +4923,553 @@ async function updateCash(value){
 
     alert(
       "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   DEBTS (MADENI)
+========================================================= */
+
+/*
+  Deni ni kiasi ambacho mtu anadaiwa
+  na wakala (mfano: mteja alipewa
+  huduma kwa deni). Kiasi hiki
+  kinahesabiwa kama sehemu ya
+  "Jumla Iliyopo" kwa sababu ni haki
+  ya wakala hata kama fedha bado
+  hazijarudi mkononi.
+
+  Mfano: Bado -20,000 kubalance na
+  mtaji. Ukiongeza deni la 15,000,
+  itakayobaki kubalance ni -5,000.
+*/
+
+function renderDebts(){
+
+  const el =
+    document.getElementById(
+      "debtsList"
+    );
+
+
+  if(state.debts.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          🧾
+        </div>
+
+        Hakuna deni lililohifadhiwa.<br>
+
+        Bonyeza <b>+ Ongeza</b> kuanza.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    state.debts.map(x=>`
+
+      <div class="source-row">
+
+        <div class="source-icon">
+          🧾
+        </div>
+
+        <div class="source-info">
+
+          <div class="source-name">
+
+            ${escapeHTML(x.name)}
+
+          </div>
+
+          <div class="source-type">
+
+            ${
+              x.date
+                ? escapeHTML(
+                    formatDateSwahili(x.date)
+                  )
+                : "Deni"
+            }
+
+            ${
+              x.note
+                ? " • " + escapeHTML(x.note)
+                : ""
+            }
+
+          </div>
+
+        </div>
+
+        <div class="source-balance">
+
+          ${fmt(x.amount)}
+
+        </div>
+
+        <div class="source-actions">
+
+          <button
+            class="mini-btn"
+            onclick="editDebt('${x.id}')">
+
+            ✎
+
+          </button>
+
+          <button
+            class="mini-btn danger-btn"
+            onclick="removeDebt('${x.id}')">
+
+            ×
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+function addDebt(){
+
+  openModal(
+
+    "Ongeza Deni",
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA LA ANAYEDAIWA
+      </label>
+
+      <input
+        id="debtName"
+        class="input"
+        placeholder="Mfano Juma Athumani">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        KIASI ANACHODAIWA
+      </label>
+
+      <input
+        id="debtAmount"
+        class="input"
+        type="number"
+        min="1"
+        placeholder="Mfano 15000">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MAELEZO (SI LAZIMA)
+      </label>
+
+      <input
+        id="debtNote"
+        class="input"
+        placeholder="Mfano Alitoa float bila cash">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="debtDate"
+        class="input"
+        type="date"
+        value="${today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveDebt()">
+
+      HIFADHI DENI
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveDebt(){
+
+  const name =
+    document.getElementById(
+      "debtName"
+    ).value.trim();
+
+
+  const amount =
+    Number(
+      document.getElementById(
+        "debtAmount"
+      ).value || 0
+    );
+
+
+  const note =
+    document.getElementById(
+      "debtNote"
+    ).value.trim();
+
+
+  const date =
+    document.getElementById(
+      "debtDate"
+    ).value ||
+    today();
+
+
+  if(!name){
+
+    alert(
+      "Weka jina la anayedaiwa."
+    );
+
+    return;
+
+  }
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi cha deni."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("debts")
+      .add({
+
+        name:name,
+
+        amount:amount,
+
+        note:note,
+
+        date:date,
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Deni limeongezwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+function editDebt(id){
+
+  const x =
+    state.debts.find(
+      d=>d.id === id
+    );
+
+
+  if(!x) return;
+
+
+  openModal(
+
+    "Rekebisha Deni",
+
+    `
+
+    <div class="field">
+
+      <label>
+        JINA LA ANAYEDAIWA
+      </label>
+
+      <input
+        id="editDebtName"
+        class="input"
+        value="${escapeHTML(x.name)}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        KIASI ANACHODAIWA
+      </label>
+
+      <input
+        id="editDebtAmount"
+        class="input"
+        type="number"
+        min="1"
+        value="${Number(x.amount || 0)}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MAELEZO (SI LAZIMA)
+      </label>
+
+      <input
+        id="editDebtNote"
+        class="input"
+        value="${escapeHTML(x.note || "")}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="editDebtDate"
+        class="input"
+        type="date"
+        value="${x.date || today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveDebtEdit('${id}')">
+
+      HIFADHI MABADILIKO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveDebtEdit(id){
+
+  const name =
+    document.getElementById(
+      "editDebtName"
+    ).value.trim();
+
+
+  const amount =
+    Number(
+      document.getElementById(
+        "editDebtAmount"
+      ).value || 0
+    );
+
+
+  const note =
+    document.getElementById(
+      "editDebtNote"
+    ).value.trim();
+
+
+  const date =
+    document.getElementById(
+      "editDebtDate"
+    ).value ||
+    today();
+
+
+  if(!name){
+
+    alert(
+      "Jina haliwezi kuwa tupu."
+    );
+
+    return;
+
+  }
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi cha deni."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("debts")
+      .doc(id)
+      .set({
+
+        name:name,
+
+        amount:amount,
+
+        note:note,
+
+        date:date,
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      },{
+        merge:true
+      });
+
+
+    closeModal();
+
+    await loadData();
+
+
+    toast(
+      "Deni limebadilishwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+async function removeDebt(id){
+
+  const x =
+    state.debts.find(
+      d=>d.id === id
+    );
+
+
+  if(!x) return;
+
+
+  if(!confirm(
+    "Una uhakika unataka kufuta deni la " +
+    x.name +
+    " (" + fmt(x.amount) + ")?"
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("debts")
+      .doc(id)
+      .delete();
+
+
+    await loadData();
+
+
+    toast(
+      "Deni limefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufuta: " +
       errorMessage(error)
     );
 
@@ -5825,10 +6882,23 @@ function getTotals(){
     Number(state.cash || 0);
 
 
+  const debts =
+    state.debts.reduce(
+
+      (sum,x)=>
+        sum +
+        Number(x.amount || 0),
+
+      0
+
+    );
+
+
   const totalOnHand =
     networks +
     banks +
-    cash;
+    cash +
+    debts;
 
 
   const capital =
@@ -5847,6 +6917,8 @@ function getTotals(){
     banks,
 
     cash,
+
+    debts,
 
     totalOnHand,
 
@@ -5873,6 +6945,22 @@ function renderClosingPreview(){
     Math.abs(
       t.difference
     ) < 0.01;
+
+
+  const diffColor =
+    balanced
+      ? "var(--green)"
+      : (t.difference > 0
+          ? "var(--blue)"
+          : "var(--danger)");
+
+
+  const diffLabel =
+    balanced
+      ? fmt(0)
+      : (t.difference > 0
+          ? "+" + fmt(t.difference)
+          : "-" + fmt(Math.abs(t.difference)));
 
 
   document.getElementById(
@@ -5936,6 +7024,19 @@ function renderClosingPreview(){
       <div class="closing-row">
 
         <span>
+          Madeni
+        </span>
+
+        <strong>
+          ${fmt(t.debts)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
           Jumla Iliyopo
         </span>
 
@@ -5965,19 +7066,9 @@ function renderClosingPreview(){
           Tofauti
         </span>
 
-        <strong style="
-          color:${
-            balanced
-            ? "var(--green)"
-            : "var(--danger)"
-          }
-        ">
+        <strong style="color:${diffColor}">
 
-          ${fmt(
-            Math.abs(
-              t.difference
-            )
-          )}
+          ${diffLabel}
 
         </strong>
 
@@ -5989,7 +7080,9 @@ function renderClosingPreview(){
         ${
           balanced
           ? "status-ok"
-          : "status-bad"
+          : (t.difference > 0
+              ? "status-over"
+              : "status-bad")
         }
       ">
 
@@ -5998,7 +7091,9 @@ function renderClosingPreview(){
 
           ? "✓ HESABU ZIMESAWAZIKA"
 
-          : "⚠ HESABU HAZIJASAWAZIKA"
+          : (t.difference > 0
+              ? "🔵 IMEZIDI KWA " + fmt(t.difference)
+              : "⚠ PUNGUFU KWA " + fmt(Math.abs(t.difference)))
 
         }
 
@@ -6054,10 +7149,10 @@ async function closeToday(){
     fmt(t.capital) +
 
     "\nTofauti: " +
-    fmt(
-      Math.abs(
-        t.difference
-      )
+    (
+      t.difference > 0
+        ? "+" + fmt(t.difference)
+        : "-" + fmt(Math.abs(t.difference))
     )
 
   )) return;
@@ -6145,6 +7240,19 @@ async function closeToday(){
       }));
 
 
+    const debtsSnapshot =
+      state.debts.map(x=>({
+
+        id:x.id,
+
+        name:x.name,
+
+        amount:
+          Number(x.amount || 0)
+
+      }));
+
+
     const closingData = {
 
       date:date,
@@ -6163,9 +7271,14 @@ async function closeToday(){
       cash:
         Number(t.cash),
 
+      debtsTotal:
+        Number(t.debts),
+
       networksSnapshot,
 
       banksSnapshot,
+
+      debtsSnapshot,
 
       expensesToday,
 
@@ -6288,7 +7401,29 @@ function renderClosings(){
 
 
   el.innerHTML =
-    list.map(c=>`
+    list.map(c=>{
+
+      const diffVal =
+        Number(c.diff || 0);
+
+
+      const isBalanced =
+        Math.abs(diffVal) < 0.01;
+
+
+      const tagLabel =
+        isBalanced
+
+          ? "✓ IMESAWAZISHWA"
+
+          : (diffVal > 0
+
+              ? "🔵 IMEZIDI " + fmt(diffVal)
+
+              : "⚠ PUNGUFU " + fmt(Math.abs(diffVal)));
+
+
+      return `
 
       <div class="list-item">
 
@@ -6335,21 +7470,7 @@ function renderClosings(){
 
           <span class="tag">
 
-            ${
-              Math.abs(
-                Number(c.diff || 0)
-              ) < 0.01
-
-              ? "✓ IMESAWAZISHWA"
-
-              : "⚠ TOFAUTI " +
-                fmt(
-                  Math.abs(
-                    Number(c.diff || 0)
-                  )
-                )
-
-            }
+            ${tagLabel}
 
           </span>
 
@@ -6366,7 +7487,7 @@ function renderClosings(){
 
       </div>
 
-    `).join("");
+    `;}).join("");
 
 }
 
@@ -6651,9 +7772,13 @@ function renderClosingPDF(c){
      STATUS
   ======================================================== */
 
+  const diffVal =
+    Number(c.diff || 0);
+
+
   const balanced =
     Math.abs(
-      Number(c.diff || 0)
+      diffVal
     ) < 0.01;
 
 
@@ -6663,7 +7788,11 @@ function renderClosingPDF(c){
 
       ? "✓ HESABU IMESAWAZISHWA"
 
-      : "⚠ HESABU HAIJASAWAZISHWA",
+      : (diffVal > 0
+
+          ? "IMEZIDI MTAJI MKUU"
+
+          : "PUNGUFU KULINGANA NA MTAJI MKUU"),
 
     40,
 
@@ -6742,9 +7871,10 @@ function renderClosingPDF(c){
 
 
   text(
+    (diffVal > 0 ? "+" : "-") +
     money(
       Math.abs(
-        c.diff || 0
+        diffVal
       )
     ),
     300,
@@ -6923,6 +8053,75 @@ function renderClosingPDF(c){
 
 
   y += 23;
+
+  line();
+
+
+  /* =======================================================
+     DEBTS
+  ======================================================== */
+
+  text(
+    "MADENI",
+    40,
+    y,
+    12,
+    true
+  );
+
+  y += 17;
+
+
+  const debtsSnap =
+    c.debtsSnapshot ||
+    [];
+
+
+  if(
+    debtsSnap.length === 0
+  ){
+
+    text(
+      "Hakuna madeni.",
+      50,
+      y,
+      9
+    );
+
+    y += 16;
+
+  }else{
+
+    debtsSnap.forEach(x=>{
+
+      checkPage();
+
+
+      text(
+        x.name || "",
+        50,
+        y,
+        9
+      );
+
+
+      text(
+        money(x.amount),
+        300,
+        y,
+        9,
+        true
+      );
+
+
+      y += 15;
+
+    });
+
+  }
+
+
+  y += 8;
 
   line();
 
@@ -7151,6 +8350,1629 @@ function renderClosingPDF(c){
 
     "Wakala_Report_" +
     (c.date || today()) +
+    ".pdf"
+
+  );
+
+}
+
+
+/* =========================================================
+   LIPA MODULE (Independent)
+========================================================= */
+
+/*
+  Kipengele hiki hakiingiliani na Mtaji Mkuu,
+  Cash, Mitandao, Benki, Madeni, Matumizi
+  wala Ongezeko ya mfumo mkuu.
+
+  Kina data yake yenyewe:
+  - lipaEntries  (faida / matumizi ya lipa)
+  - lipaClosings (historia ya kufunga mwezi)
+
+  "Mzunguko" (period) ni muda kati ya kufunga
+  mwezi mmoja na mwingine. Salio la mzunguko
+  linaongezeka kila siku mpaka mtumiaji
+  abonyeze "Funga Mwezi".
+*/
+
+function openLipa(){
+
+  document.getElementById("app")
+    .classList.add("hidden");
+
+  document.getElementById("lipaScreen")
+    .classList.remove("hidden");
+
+  loadLipaData();
+
+}
+
+
+function closeLipaScreen(){
+
+  document.getElementById("lipaScreen")
+    .classList.add("hidden");
+
+  document.getElementById("app")
+    .classList.remove("hidden");
+
+}
+
+
+async function loadLipaData(){
+
+  showLoading();
+
+
+  try{
+
+    const doc =
+      await userRef().get();
+
+
+    const data =
+      doc.exists
+        ? (doc.data() || {})
+        : {};
+
+
+    let periodStart =
+      data.lipaPeriodStart ||
+      "";
+
+
+    if(!periodStart){
+
+      periodStart =
+        today();
+
+
+      await userRef().set({
+
+        lipaPeriodStart:
+          periodStart
+
+      },{
+        merge:true
+      });
+
+    }
+
+
+    state.lipa.periodStart =
+      periodStart;
+
+
+    const [
+
+      entriesSnap,
+
+      closingsSnap
+
+    ] = await Promise.all([
+
+      collectionRef("lipaEntries").get(),
+
+      collectionRef("lipaClosings").get()
+
+    ]);
+
+
+    state.lipa.entries =
+      entriesSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.lipa.closings =
+      closingsSnap.docs.map(d=>({
+
+        id:d.id,
+
+        ...d.data()
+
+      }));
+
+
+    state.lipa.loaded =
+      true;
+
+
+    renderLipaScreen();
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kupakia Lipa: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   LIPA TOTALS
+========================================================= */
+
+function getLipaDayTotals(dateStr){
+
+  const todays =
+    state.lipa.entries.filter(
+      e=>e.date === dateStr
+    );
+
+
+  const faida =
+    todays
+
+      .filter(e=>
+        e.type === "faida"
+      )
+
+      .reduce(
+        (sum,e)=>
+          sum +
+          Number(e.amount || 0),
+        0
+      );
+
+
+  const matumizi =
+    todays
+
+      .filter(e=>
+        e.type === "matumizi"
+      )
+
+      .reduce(
+        (sum,e)=>
+          sum +
+          Number(e.amount || 0),
+        0
+      );
+
+
+  return {
+
+    faida,
+
+    matumizi,
+
+    salio:
+      faida - matumizi
+
+  };
+
+}
+
+
+function getLipaPeriodTotals(){
+
+  const start =
+    state.lipa.periodStart ||
+    today();
+
+
+  const inPeriod =
+    state.lipa.entries.filter(
+      e=>
+        String(e.date || "") >=
+        start
+    );
+
+
+  const faida =
+    inPeriod
+
+      .filter(e=>
+        e.type === "faida"
+      )
+
+      .reduce(
+        (sum,e)=>
+          sum +
+          Number(e.amount || 0),
+        0
+      );
+
+
+  const matumizi =
+    inPeriod
+
+      .filter(e=>
+        e.type === "matumizi"
+      )
+
+      .reduce(
+        (sum,e)=>
+          sum +
+          Number(e.amount || 0),
+        0
+      );
+
+
+  return {
+
+    start,
+
+    faida,
+
+    matumizi,
+
+    baki:
+      faida - matumizi
+
+  };
+
+}
+
+
+/* =========================================================
+   LIPA RENDER
+========================================================= */
+
+function renderLipaScreen(){
+
+  const dayBadge =
+    document.getElementById(
+      "lipaDayBadge"
+    );
+
+
+  if(dayBadge){
+
+    dayBadge.innerHTML =
+      "📅 Siku ya leo: <b>" +
+      formatDateSwahili(today()) +
+      "</b>";
+
+  }
+
+
+  const dayTotals =
+    getLipaDayTotals(today());
+
+
+  document.getElementById(
+    "lipaTodayFaida"
+  ).textContent =
+    fmt(dayTotals.faida);
+
+
+  document.getElementById(
+    "lipaTodayMatumizi"
+  ).textContent =
+    fmt(dayTotals.matumizi);
+
+
+  document.getElementById(
+    "lipaTodaySalio"
+  ).textContent =
+    fmt(dayTotals.salio);
+
+
+  const periodTotals =
+    getLipaPeriodTotals();
+
+
+  document.getElementById(
+    "lipaPeriodRange"
+  ).textContent =
+    "Mzunguko wa sasa: " +
+    formatDateSwahili(periodTotals.start) +
+    " → " +
+    formatDateSwahili(today());
+
+
+  const bakiEl =
+    document.getElementById(
+      "lipaPeriodBaki"
+    );
+
+
+  bakiEl.textContent =
+    (periodTotals.baki > 0 ? "+" : "") +
+    fmt(periodTotals.baki);
+
+
+  bakiEl.className =
+    "lipa-period-value " +
+    (
+      periodTotals.baki < 0
+        ? "negative"
+        : "positive"
+    );
+
+
+  renderLipaEntries(
+    "faida",
+    "lipaFaidaList"
+  );
+
+
+  renderLipaEntries(
+    "matumizi",
+    "lipaMatumiziList"
+  );
+
+
+  renderLipaClosingPreview();
+
+
+  renderLipaClosings();
+
+}
+
+
+function renderLipaEntries(type,elId){
+
+  const el =
+    document.getElementById(elId);
+
+
+  const list =
+    state.lipa.entries
+
+      .filter(e=>
+        e.type === type &&
+        e.date === today()
+      )
+
+      .sort((a,b)=>
+        String(a.time || "")
+          .localeCompare(
+            String(b.time || "")
+          )
+      );
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+
+          ${
+            type === "faida"
+              ? "💹"
+              : "💸"
+          }
+
+        </div>
+
+        Hakuna ${
+          type === "faida"
+            ? "faida"
+            : "matumizi"
+        } ya lipa leo bado.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    list.map(e=>`
+
+      <div class="list-item">
+
+        <div class="list-main">
+
+          <div>
+
+            <div class="list-title">
+
+              ${
+                type === "faida"
+                  ? "Faida ya Lipa"
+                  : escapeHTML(
+                      e.description ||
+                      "Matumizi ya Lipa"
+                    )
+              }
+
+            </div>
+
+            <div class="list-meta">
+
+              <span class="lipa-time-badge">
+
+                🕐 ${escapeHTML(e.time || "-")}
+
+              </span>
+
+              ${
+                type === "faida" &&
+                e.description
+                  ? " • " +
+                    escapeHTML(e.description)
+                  : ""
+              }
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="list-amount"
+            style="color:${
+              type === "faida"
+                ? "var(--green)"
+                : "var(--danger)"
+            }">
+
+            ${
+              type === "faida"
+                ? "+"
+                : "-"
+            }${fmt(e.amount)}
+
+          </div>
+
+        </div>
+
+
+        <div class="list-bottom">
+
+          <span></span>
+
+          <div style="display:flex;gap:5px">
+
+            <button
+              class="mini-btn"
+              onclick="editLipaEntry('${e.id}')">
+
+              ✎
+
+            </button>
+
+            <button
+              class="mini-btn danger-btn"
+              onclick="removeLipaEntry('${e.id}')">
+
+              ×
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+/* =========================================================
+   LIPA ENTRY FORM
+========================================================= */
+
+function openLipaEntry(type){
+
+  openModal(
+
+    type === "faida"
+      ? "Ongeza Faida ya Lipa"
+      : "Ongeza Matumizi ya Lipa",
+
+    `
+
+    <div class="field">
+
+      <label>
+        KIASI
+      </label>
+
+      <input
+        id="lipaAmount"
+        class="input"
+        type="number"
+        min="1"
+        placeholder="Mfano 500">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        SAA
+      </label>
+
+      <input
+        id="lipaTime"
+        class="input"
+        type="time"
+        value="${nowTime()}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MAELEZO (SI LAZIMA)
+      </label>
+
+      <input
+        id="lipaDescription"
+        class="input"
+        placeholder="${
+          type === "faida"
+            ? "Mfano Mteja X"
+            : "Mfano Nauli, chai..."
+        }">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="lipaDate"
+        class="input"
+        type="date"
+        value="${today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveLipaEntry('${type}')">
+
+      HIFADHI
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveLipaEntry(type){
+
+  const amount =
+    Number(
+      document.getElementById(
+        "lipaAmount"
+      ).value || 0
+    );
+
+
+  const time =
+    document.getElementById(
+      "lipaTime"
+    ).value ||
+    nowTime();
+
+
+  const description =
+    document.getElementById(
+      "lipaDescription"
+    ).value.trim();
+
+
+  const date =
+    document.getElementById(
+      "lipaDate"
+    ).value ||
+    today();
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("lipaEntries")
+      .add({
+
+        type:type,
+
+        amount:amount,
+
+        time:time,
+
+        description:description,
+
+        date:date,
+
+        createdAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    closeModal();
+
+    await loadLipaData();
+
+
+    toast(
+      type === "faida"
+        ? "Faida ya lipa imehifadhiwa."
+        : "Matumizi ya lipa yamehifadhiwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kuhifadhi: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+function editLipaEntry(id){
+
+  const e =
+    state.lipa.entries.find(
+      x=>x.id === id
+    );
+
+
+  if(!e) return;
+
+
+  openModal(
+
+    e.type === "faida"
+      ? "Rekebisha Faida ya Lipa"
+      : "Rekebisha Matumizi ya Lipa",
+
+    `
+
+    <div class="field">
+
+      <label>
+        KIASI
+      </label>
+
+      <input
+        id="editLipaAmount"
+        class="input"
+        type="number"
+        min="1"
+        value="${Number(e.amount || 0)}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        SAA
+      </label>
+
+      <input
+        id="editLipaTime"
+        class="input"
+        type="time"
+        value="${e.time || nowTime()}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        MAELEZO (SI LAZIMA)
+      </label>
+
+      <input
+        id="editLipaDescription"
+        class="input"
+        value="${escapeHTML(e.description || "")}">
+
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        TAREHE
+      </label>
+
+      <input
+        id="editLipaDate"
+        class="input"
+        type="date"
+        value="${e.date || today()}">
+
+    </div>
+
+
+    <button
+      class="primary-btn"
+      onclick="saveLipaEntryEdit('${id}')">
+
+      HIFADHI MABADILIKO
+
+    </button>
+
+    `
+
+  );
+
+}
+
+
+async function saveLipaEntryEdit(id){
+
+  const amount =
+    Number(
+      document.getElementById(
+        "editLipaAmount"
+      ).value || 0
+    );
+
+
+  const time =
+    document.getElementById(
+      "editLipaTime"
+    ).value ||
+    nowTime();
+
+
+  const description =
+    document.getElementById(
+      "editLipaDescription"
+    ).value.trim();
+
+
+  const date =
+    document.getElementById(
+      "editLipaDate"
+    ).value ||
+    today();
+
+
+  if(!amount || amount <= 0){
+
+    alert(
+      "Weka kiasi sahihi."
+    );
+
+    return;
+
+  }
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("lipaEntries")
+      .doc(id)
+      .set({
+
+        amount:amount,
+
+        time:time,
+
+        description:description,
+
+        date:date,
+
+        updatedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      },{
+        merge:true
+      });
+
+
+    closeModal();
+
+    await loadLipaData();
+
+
+    toast(
+      "Mabadiliko yamehifadhiwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+async function removeLipaEntry(id){
+
+  const e =
+    state.lipa.entries.find(
+      x=>x.id === id
+    );
+
+
+  if(!e) return;
+
+
+  if(!confirm(
+    "Futa kipengele hiki cha " +
+    fmt(e.amount) +
+    "?"
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    await collectionRef("lipaEntries")
+      .doc(id)
+      .delete();
+
+
+    await loadLipaData();
+
+
+    toast(
+      "Kimefutwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufuta: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+/* =========================================================
+   LIPA CLOSING (MWEZI)
+========================================================= */
+
+function renderLipaClosingPreview(){
+
+  const t =
+    getLipaPeriodTotals();
+
+
+  const balanceColor =
+    t.baki < 0
+      ? "var(--danger)"
+      : "var(--green)";
+
+
+  document.getElementById(
+    "lipaClosingPreview"
+  ).innerHTML = `
+
+    <div class="closing-card">
+
+      <div class="closing-row">
+
+        <span>
+          Mzunguko unaanzia
+        </span>
+
+        <strong>
+          ${formatDateSwahili(t.start)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Hadi leo
+        </span>
+
+        <strong>
+          ${formatDateSwahili(today())}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Jumla Faida
+        </span>
+
+        <strong>
+          ${fmt(t.faida)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Jumla Matumizi
+        </span>
+
+        <strong>
+          ${fmt(t.matumizi)}
+        </strong>
+
+      </div>
+
+
+      <div class="closing-row">
+
+        <span>
+          Baki Kuu ya Lipa
+        </span>
+
+        <strong style="color:${balanceColor}">
+
+          ${
+            t.baki > 0
+              ? "+"
+              : ""
+          }${fmt(t.baki)}
+
+        </strong>
+
+      </div>
+
+
+      <button
+        class="primary-btn"
+        style="margin-top:12px"
+        onclick="closeLipaMonth()">
+
+        🔒 FUNGA HESABU YA MWEZI
+
+      </button>
+
+    </div>
+
+  `;
+
+}
+
+
+async function closeLipaMonth(){
+
+  const t =
+    getLipaPeriodTotals();
+
+
+  if(!confirm(
+
+    "Funga hesabu ya Lipa kuanzia " +
+    formatDateSwahili(t.start) +
+    " hadi " +
+    formatDateSwahili(today()) +
+    "?\n\n" +
+
+    "Jumla Faida: " +
+    fmt(t.faida) +
+
+    "\nJumla Matumizi: " +
+    fmt(t.matumizi) +
+
+    "\nBaki Kuu: " +
+    (
+      t.baki > 0
+        ? "+" + fmt(t.baki)
+        : fmt(t.baki)
+    )
+
+  )) return;
+
+
+  showLoading();
+
+
+  try{
+
+    const entriesSnapshot =
+      state.lipa.entries
+
+        .filter(e=>
+          String(e.date || "") >=
+          t.start
+        )
+
+        .map(e=>({
+
+          type:e.type,
+
+          amount:
+            Number(e.amount || 0),
+
+          time:e.time || "",
+
+          description:
+            e.description || "",
+
+          date:e.date || ""
+
+        }));
+
+
+    const closingDate =
+      today();
+
+
+    await collectionRef("lipaClosings")
+      .add({
+
+        periodStart:t.start,
+
+        periodEnd:closingDate,
+
+        totalFaida:
+          Number(t.faida),
+
+        totalMatumizi:
+          Number(t.matumizi),
+
+        baki:
+          Number(t.baki),
+
+        entriesSnapshot:
+          entriesSnapshot,
+
+        closedAt:
+          firebase.firestore.FieldValue
+            .serverTimestamp()
+
+      });
+
+
+    const nextPeriodStart =
+      (()=>{
+
+        const d = new Date();
+
+        d.setDate(d.getDate()+1);
+
+        const y = d.getFullYear();
+
+        const m =
+          String(d.getMonth()+1)
+            .padStart(2,"0");
+
+        const day =
+          String(d.getDate())
+            .padStart(2,"0");
+
+        return `${y}-${m}-${day}`;
+
+      })();
+
+
+    await userRef().set({
+
+      lipaPeriodStart:
+        nextPeriodStart,
+
+      updatedAt:
+        firebase.firestore.FieldValue
+          .serverTimestamp()
+
+    },{
+      merge:true
+    });
+
+
+    await loadLipaData();
+
+
+    toast(
+      "Hesabu ya mwezi imefungwa."
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Imeshindikana kufunga: " +
+      errorMessage(error)
+    );
+
+  }finally{
+
+    hideLoading();
+
+  }
+
+}
+
+
+function renderLipaClosings(){
+
+  const el =
+    document.getElementById(
+      "lipaClosingsList"
+    );
+
+
+  const list =
+    [...state.lipa.closings]
+
+      .sort((a,b)=>
+        String(b.periodEnd || "")
+          .localeCompare(
+            String(a.periodEnd || "")
+          )
+      );
+
+
+  if(list.length === 0){
+
+    el.innerHTML = `
+
+      <div class="empty">
+
+        <div class="empty-icon">
+          🗓️
+        </div>
+
+        Hakuna mwezi uliofungwa bado.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  el.innerHTML =
+    list.map(c=>{
+
+      const baki =
+        Number(c.baki || 0);
+
+
+      return `
+
+      <div class="list-item">
+
+        <div class="list-main">
+
+          <div>
+
+            <div class="list-title">
+
+              ${escapeHTML(
+                formatDateSwahili(c.periodStart || "")
+              )} → ${escapeHTML(
+                formatDateSwahili(c.periodEnd || "")
+              )}
+
+            </div>
+
+
+            <div class="list-meta">
+
+              Faida ${fmt(c.totalFaida)} •
+              Matumizi ${fmt(c.totalMatumizi)}
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="list-amount"
+            style="color:${
+              baki < 0
+                ? "var(--danger)"
+                : "var(--green)"
+            }">
+
+            ${
+              baki > 0
+                ? "+"
+                : ""
+            }${fmt(baki)}
+
+          </div>
+
+        </div>
+
+
+        <div class="list-bottom">
+
+          <span class="tag">
+
+            BAKI KUU YA MWEZI
+
+          </span>
+
+
+          <button
+            class="pdf-btn"
+            onclick="downloadLipaReport('${c.id}')">
+
+            PDF
+
+          </button>
+
+        </div>
+
+      </div>
+
+    `;}).join("");
+
+}
+
+
+/* =========================================================
+   LIPA PDF
+========================================================= */
+
+function downloadLipaReport(id){
+
+  const closing =
+    state.lipa.closings.find(
+      x=>x.id === id
+    );
+
+
+  if(!closing){
+
+    alert(
+      "Report haijapatikana."
+    );
+
+    return;
+
+  }
+
+
+  if(!window.jspdf){
+
+    alert(
+      "PDF library haijapakia. Hakikisha internet ipo kisha jaribu tena."
+    );
+
+    return;
+
+  }
+
+
+  const {
+    jsPDF
+  } =
+    window.jspdf;
+
+
+  const doc =
+    new jsPDF({
+
+      orientation:"portrait",
+
+      unit:"pt",
+
+      format:"a4"
+
+    });
+
+
+  const pageWidth =
+    doc.internal.pageSize
+      .getWidth();
+
+
+  const pageHeight =
+    doc.internal.pageSize
+      .getHeight();
+
+
+  let y = 45;
+
+
+  function text(
+    value,
+    x,
+    yy,
+    size=10,
+    bold=false
+  ){
+
+    doc.setFont(
+
+      "helvetica",
+
+      bold
+        ? "bold"
+        : "normal"
+
+    );
+
+
+    doc.setFontSize(size);
+
+
+    doc.text(
+      String(value),
+      x,
+      yy
+    );
+
+  }
+
+
+  function line(){
+
+    doc.setDrawColor(210,220,214);
+
+    doc.line(
+      40,
+      y,
+      pageWidth - 40,
+      y
+    );
+
+    y += 14;
+
+  }
+
+
+  function checkPage(){
+
+    if(y > pageHeight - 65){
+
+      doc.addPage();
+
+      y = 45;
+
+    }
+
+  }
+
+
+  text("GODEN TECH",40,y,10,true);
+
+  y += 16;
+
+
+  text("LIPA",40,y,22,true);
+
+  y += 17;
+
+
+  text("RIPOTI YA KUFUNGA MWEZI",40,y,11,true);
+
+  y += 17;
+
+
+  text(
+
+    "Mzunguko: " +
+    formatDateSwahili(closing.periodStart || "") +
+    " hadi " +
+    formatDateSwahili(closing.periodEnd || ""),
+
+    40,y,9,false
+
+  );
+
+  y += 20;
+
+
+  line();
+
+
+  text("MUHTASARI",40,y,12,true);
+
+  y += 18;
+
+
+  text("Jumla Faida:",50,y,9);
+
+  text(fmt(closing.totalFaida),300,y,9,true);
+
+  y += 16;
+
+
+  text("Jumla Matumizi:",50,y,9);
+
+  text(fmt(closing.totalMatumizi),300,y,9,true);
+
+  y += 16;
+
+
+  text("Baki Kuu ya Mwezi:",50,y,9);
+
+  text(
+
+    (
+      Number(closing.baki || 0) > 0
+        ? "+"
+        : ""
+    ) + fmt(closing.baki),
+
+    300,y,9,true
+
+  );
+
+  y += 23;
+
+
+  line();
+
+
+  text("MAINGIZO YA MZUNGUKO HUU",40,y,12,true);
+
+  y += 17;
+
+
+  const entries =
+    closing.entriesSnapshot ||
+    [];
+
+
+  if(entries.length === 0){
+
+    text("Hakuna maingizo.",50,y,9);
+
+    y += 16;
+
+  }else{
+
+    entries
+
+      .slice()
+
+      .sort((a,b)=>
+
+        String(a.date||"").localeCompare(String(b.date||"")) ||
+        String(a.time||"").localeCompare(String(b.time||""))
+
+      )
+
+      .forEach(e=>{
+
+        checkPage();
+
+
+        text(
+
+          formatDateSwahili(e.date||"") +
+          " " +
+          (e.time || "") +
+          " - " +
+          (
+            e.type === "faida"
+              ? "Faida"
+              : (e.description || "Matumizi")
+          ),
+
+          50,y,8
+
+        );
+
+
+        text(
+
+          (e.type === "faida" ? "+" : "-") +
+          fmt(e.amount),
+
+          400,y,8,true
+
+        );
+
+
+        y += 13;
+
+      });
+
+  }
+
+
+  const pages =
+    doc.internal.getNumberOfPages();
+
+
+  for(let i=1;i<=pages;i++){
+
+    doc.setPage(i);
+
+    doc.setFont("helvetica","normal");
+
+    doc.setFontSize(7);
+
+    doc.text(
+      "Goden Tech • godenvegula@gmail.com",
+      40,
+      pageHeight - 30
+    );
+
+    doc.text(
+      "© 2026 Goden Tech. All Rights Reserved.",
+      40,
+      pageHeight - 18
+    );
+
+    doc.text(
+      "Ukurasa " + i + " / " + pages,
+      pageWidth - 100,
+      pageHeight - 25
+    );
+
+  }
+
+
+  doc.save(
+
+    "Lipa_Report_" +
+    (closing.periodStart || today()) +
+    "_" +
+    (closing.periodEnd || today()) +
     ".pdf"
 
   );
@@ -7397,4 +10219,4 @@ document.addEventListener(
 </script>
 
 </body>
-  </html>
+</html>
