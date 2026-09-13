@@ -5823,45 +5823,6 @@ async function restoreToSource(
 
 function openExpense(){
 
-  let options = `
-
-    <option value="cash">
-      💵 Cash / Taslimu
-    </option>
-
-  `;
-
-
-  state.networks.forEach(n=>{
-
-    options += `
-
-      <option value="network:${n.id}">
-
-        📱 ${escapeHTML(n.name)}
-
-      </option>
-
-    `;
-
-  });
-
-
-  state.banks.forEach(b=>{
-
-    options += `
-
-      <option value="bank:${b.id}">
-
-        🏦 ${escapeHTML(b.name)}
-
-      </option>
-
-    `;
-
-  });
-
-
   openModal(
 
     "Ongeza Matumizi",
@@ -5887,28 +5848,13 @@ function openExpense(){
     <div class="field">
 
       <label>
-        MATUMIZI HAYA YAMETUMIKA WAPI?
+        MATUMIZI HAYA NI YA NINI?
       </label>
 
       <input
         id="expenseDescription"
         class="input"
         placeholder="Mfano Chakula, mafuta, kodi...">
-
-    </div>
-
-
-    <div class="field">
-
-      <label>
-        FEDHA ZIMETOKA WAPI?
-      </label>
-
-      <select id="expenseSource">
-
-        ${options}
-
-      </select>
 
     </div>
 
@@ -5963,12 +5909,6 @@ async function submitExpense(){
     ).value.trim();
 
 
-  const source =
-    document.getElementById(
-      "expenseSource"
-    ).value;
-
-
   const date =
     document.getElementById(
       "expenseDate"
@@ -5998,17 +5938,6 @@ async function submitExpense(){
   }
 
 
-  if(!source){
-
-    alert(
-      "Chagua chanzo cha fedha."
-    );
-
-    return;
-
-  }
-
-
   if(
     state.mainCapital < amount
   ){
@@ -6027,12 +5956,6 @@ async function submitExpense(){
 
   try{
 
-    await subtractFromSource(
-      source,
-      amount
-    );
-
-
     state.mainCapital -=
       amount;
 
@@ -6049,10 +5972,10 @@ async function submitExpense(){
 
         date:date,
 
-        source:source,
+        source:"capital",
 
         sourceName:
-          getSourceName(source),
+          "Mtaji Mkuu",
 
         createdAt:
           firebase.firestore.FieldValue
@@ -6176,7 +6099,7 @@ function renderExpenses(){
 
             ${escapeHTML(
               e.sourceName ||
-              getSourceName(e.source)
+              "Mtaji Mkuu"
             )}
 
           </span>
@@ -6226,12 +6149,6 @@ async function removeExpense(id){
 
 
   try{
-
-    await restoreToSource(
-      e.source,
-      Number(e.amount || 0)
-    );
-
 
     state.mainCapital +=
       Number(e.amount || 0);
