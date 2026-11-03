@@ -200,6 +200,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .source-name{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-type{font-size:12px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .source-balance{text-align:right;font-size:14px;font-weight:700;white-space:nowrap}
+.pending-text{color:var(--amber);font-size:12px;font-weight:600;white-space:normal}
 .source-actions{display:flex;gap:5px;margin-left:4px}
 .mini-btn{width:32px;height:32px;border:1px solid var(--border2);background:var(--surface);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .mini-btn:hover{background:var(--soft);color:var(--text)}
@@ -458,6 +459,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
       <button class="nav-item" onclick="goTo('banks',this)"><span class="nav-icon"><svg class="i"><use href="#i-bank"/></svg></span>Benki</button>
       <button class="nav-item" onclick="goTo('cash',this)"><span class="nav-icon"><svg class="i"><use href="#i-cash"/></svg></span>Cash</button>
       <button class="nav-item" onclick="goTo('debts',this)"><span class="nav-icon"><svg class="i"><use href="#i-file"/></svg></span>Madeni</button>
+      <button class="nav-item" onclick="goTo('otherSales',this)"><span class="nav-icon"><svg class="i"><use href="#i-wallet"/></svg></span>Mauzo Mengine</button>
     </div>
 
     <div class="nav-section-label">Miamala</div>
@@ -512,7 +514,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
         <div class="summary-card s-net"><div class="emoji"><svg class="i"><use href="#i-phone"/></svg></div><small>Mitandao</small><strong id="networkSummary">TSh 0</strong></div>
         <div class="summary-card s-bank"><div class="emoji"><svg class="i"><use href="#i-bank"/></svg></div><small>Benki</small><strong id="bankSummary">TSh 0</strong></div>
         <div class="summary-card s-debt"><div class="emoji"><svg class="i"><use href="#i-file"/></svg></div><small>Madeni</small><strong id="debtSummary">TSh 0</strong></div>
-        <div class="summary-card s-total wide"><div class="emoji"><svg class="i"><use href="#i-diamond"/></svg></div><div><small>Jumla iliyopo (na madeni)</small><strong id="totalSummary">TSh 0</strong></div></div>
+        <div class="summary-card s-total wide"><div class="emoji"><svg class="i"><use href="#i-diamond"/></svg></div><div><small>Jumla huduma za kifedha (baada ya kutoa mauzo mengine)</small><strong id="totalSummary">TSh 0</strong></div></div>
       </div>
     </section>
 
@@ -535,6 +537,9 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
         <button class="action-btn" onclick="addDebt()"><div class="action-icon ai-debt"><svg class="i"><use href="#i-file"/></svg></div><div><strong>Deni</strong><small>Andika deni</small></div></button>
       </div>
     </section>
+
+    <!-- HALI YA HESABU BAADA YA KUFUNGA (inaonekana tu siku ikifungwa) -->
+    <section id="closedSection" class="section hidden"></section>
 
     <section id="networks" class="section">
       <div class="section-title"><h3>Mitandao</h3><button class="secondary-btn" onclick="addNetwork()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
@@ -560,6 +565,11 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <section id="debts" class="section">
       <div class="section-title"><h3>Madeni</h3><button class="secondary-btn" onclick="addDebt()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
       <div id="debtsList" class="panel"></div>
+    </section>
+
+    <section id="otherSales" class="section">
+      <div class="section-title"><h3>Mauzo Mengine</h3><button class="secondary-btn" onclick="openOtherSale()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div id="otherSalesPanel" class="panel"></div>
     </section>
 
     <section id="expenses" class="section">
@@ -674,7 +684,7 @@ const db=firebase.firestore();
 const TS=()=>firebase.firestore.FieldValue.serverTimestamp();
 
 /* ================= STATE ================= */
-let state={initialized:false,mainCapital:0,networks:[],banks:[],cash:0,debts:[],expenses:[],increases:[],closings:[],
+let state={initialized:false,mainCapital:0,networks:[],banks:[],cash:0,cashPending:false,debts:[],expenses:[],increases:[],closings:[],otherSales:[],
   lipa:{loaded:false,periodStart:"",entries:[],closings:[]}};
 let currentUser=null;
 let autoCloseTimer=null;
@@ -729,6 +739,7 @@ function errorMessage(error){
 }
 function dayBadgeHTML(){return ic("calendar")+"Siku ya leo: <b>"+formatDateSwahili(today())+"</b>";}
 function emptyBlock(icon,html){return `<div class="empty"><div class="empty-icon">${ic(icon)}</div>${html}</div>`;}
+const PENDING_HTML='<span class="pending-text">Ingiza hesabu ya leo</span>';
 
 /* ================= AUTH UI ================= */
 function showRegister(){$("loginForm").classList.add("hidden");$("registerForm").classList.remove("hidden");}
@@ -747,7 +758,7 @@ async function register(){
     const result=await auth.createUserWithEmailAndPassword(email,password);
     const user=result.user;
     await db.collection("users").doc(user.uid).set({
-      name:name,email:email,initialized:false,mainCapital:0,cash:0,
+      name:name,email:email,initialized:false,mainCapital:0,cash:0,cashPending:false,
       createdAt:TS(),updatedAt:TS(),lastActiveDay:today()
     });
     toast("Akaunti imetengenezwa.");
@@ -787,21 +798,32 @@ async function loadData(){
     if(!doc.exists){
       await userRef().set({
         name:currentUser.displayName||"",email:currentUser.email||"",
-        initialized:false,mainCapital:0,cash:0,lastActiveDay:today(),updatedAt:TS()
+        initialized:false,mainCapital:0,cash:0,cashPending:false,lastActiveDay:today(),updatedAt:TS()
       });
-      state.initialized=false;state.mainCapital=0;state.cash=0;
+      state.initialized=false;state.mainCapital=0;state.cash=0;state.cashPending=false;
       currentUser.userData={name:currentUser.displayName||"",email:currentUser.email||"",lastActiveDay:today()};
     }else{
       const data=doc.data()||{};
       state.initialized=Boolean(data.initialized);
       state.mainCapital=Number(data.mainCapital||0);
       state.cash=Number(data.cash||0);
+      state.cashPending=Boolean(data.cashPending);
       currentUser.userData=data;
     }
 
     const names=["networks","banks","debts","expenses","increases","closings"];
     const snaps=await Promise.all(names.map(n=>collectionRef(n).get()));
     names.forEach((n,i)=>{state[n]=snaps[i].docs.map(d=>({id:d.id,...d.data()}));});
+
+    // Mauzo mengine yanapakiwa peke yake: ruhusa ikikosekana, app bado inafunguka
+    try{
+      const salesSnap=await collectionRef("otherSales").get();
+      state.otherSales=salesSnap.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(e){
+      console.error("otherSales:",e);
+      state.otherSales=[];
+      toast("Mauzo Mengine hayajapakiwa: ruhusa ya Firestore (otherSales) haijawekwa.");
+    }
 
     // Angalia kama siku iliyopita inahitaji kufungwa automatically KABLA ya render
     await checkAutomaticDailyClosing();
@@ -818,6 +840,7 @@ async function saveBaseData(){
     initialized:state.initialized,
     mainCapital:Number(state.mainCapital||0),
     cash:Number(state.cash||0),
+    cashPending:Boolean(state.cashPending),
     name:currentUser.userData?.name||currentUser.displayName||"",
     email:currentUser.email||"",
     updatedAt:TS()
@@ -838,8 +861,8 @@ async function saveInitialSetup(){
   if(!amount||amount<=0){alert("Weka kiasi sahihi cha mtaji.");return;}
   showLoading();
   try{
-    state.mainCapital=amount;state.cash=0;state.initialized=true;
-    await userRef().set({initialized:true,mainCapital:amount,cash:0,lastActiveDay:today(),updatedAt:TS()},{merge:true});
+    state.mainCapital=amount;state.cash=0;state.cashPending=false;state.initialized=true;
+    await userRef().set({initialized:true,mainCapital:amount,cash:0,cashPending:false,lastActiveDay:today(),updatedAt:TS()},{merge:true});
     closeModal();render();
     toast("Mtaji wa kuanzia umehifadhiwa.");
   }catch(error){
@@ -849,7 +872,8 @@ async function saveInitialSetup(){
 
 /* ================= AUTOMATIC DAILY CLOSING ================= */
 // Saa 6 usiku (00:00) siku inabadilika. lastActiveDay ikiwa ya jana na haikufungwa,
-// inafungwa automatically. Mtaji Mkuu na balances havibadilishwi.
+// inafungwa automatically. Kisha salio la Mitandao, Benki na Cash linafutwa
+// (linasubiri uingize hesabu ya leo). Mtaji Mkuu na Madeni havibadilishwi.
 async function checkAutomaticDailyClosing(){
   if(!currentUser||!state.initialized||ui.autoClosing) return;
   const currentDay=today();
@@ -866,22 +890,45 @@ async function checkAutomaticDailyClosing(){
   try{
     const oldClosing=await collectionRef("closings").doc(lastDay).get();
     if(!oldClosing.exists) await autoCloseDay(lastDay);
+    await resetBalancesForNewDay();
     await userRef().set({lastActiveDay:currentDay,updatedAt:TS()},{merge:true});
     if(currentUser.userData) currentUser.userData.lastActiveDay=currentDay;
-    toast("Siku mpya imeanza. Hesabu ya "+formatDateSwahili(lastDay)+" imefungwa automatically.");
+    toast("Siku mpya imeanza. Hesabu ya "+formatDateSwahili(lastDay)+" imefungwa. Ingiza hesabu ya leo.");
   }catch(error){
     console.error("Auto closing error:",error);
   }finally{ui.autoClosing=false;}
 }
 
+// Inafuta salio la mitandao, benki na cash baada ya hesabu ya jana kuhifadhiwa.
+async function resetBalancesForNewDay(){
+  const batch=db.batch();
+  state.networks.forEach(n=>batch.set(collectionRef("networks").doc(n.id),{balance:0,pending:true,updatedAt:TS()},{merge:true}));
+  state.banks.forEach(b=>batch.set(collectionRef("banks").doc(b.id),{balance:0,pending:true,updatedAt:TS()},{merge:true}));
+  batch.set(userRef(),{cash:0,cashPending:true,updatedAt:TS()},{merge:true});
+  // Mauzo mengine ya siku zilizopita yanafutwa (yamehifadhiwa kwenye hesabu iliyofungwa).
+  // Matumizi na Ongezeko (Commission/Mtaji) HAVIFUTWI.
+  const cutoff=today();
+  state.otherSales
+    .filter(s=>String(s.date||"")<cutoff)
+    .forEach(s=>batch.delete(collectionRef("otherSales").doc(s.id)));
+  await batch.commit();
+  state.otherSales=state.otherSales.filter(s=>String(s.date||"")>=cutoff);
+  state.networks.forEach(n=>{n.balance=0;n.pending=true;});
+  state.banks.forEach(b=>{b.balance=0;b.pending=true;});
+  state.cash=0;state.cashPending=true;
+}
+
 function buildClosingData(date,automatic){
-  const t=getTotals();
+  const t=getTotals(date);
   const balanced=Math.abs(t.difference)<0.01;
   return {
     date:date,
     automatic:automatic,
     diff:Number(t.difference),
     totalOnHand:Number(t.totalOnHand),
+    grossOnHand:Number(t.gross),
+    otherSalesTotal:Number(t.otherSales),
+    otherSalesToday:otherSalesOf(date).map(s=>({category:s.category||"",amount:Number(s.amount||0),description:s.description||""})),
     mainCapital:Number(t.capital),
     cash:Number(t.cash),
     debtsTotal:Number(t.debts),
@@ -920,6 +967,8 @@ function stopAutoCloseWatcher(){
 function render(){
   renderDashboard();renderNetworks();renderBanks();renderDebts();
   renderExpenses();renderIncreases();renderClosingPreview();renderClosings();
+  renderOtherSales();
+  renderClosedState();
   updateWelcome();
 }
 
@@ -928,6 +977,37 @@ function updateWelcome(){
   $("welcomeText").textContent="Karibu, "+name;
   $("navUser").textContent=String(name).toUpperCase();
   $("currentDayBadge").innerHTML=dayBadgeHTML();
+}
+
+/* ================= HALI YA HESABU BAADA YA KUFUNGA ================= */
+// Hesabu ya leo ikishafungwa: Mitandao, Benki, Cash na Madeni vinafichwa,
+// na kadi moja inaonyesha hali (imesawazishwa / imezidi / loss).
+function renderClosedState(){
+  const c=state.closings.find(x=>x.date===today());
+  const closed=!!c;
+  ["networks","banks","cash","debts","otherSales"].forEach(id=>$(id).classList.toggle("hidden",closed));
+  const box=$("closedSection");
+  box.classList.toggle("hidden",!closed);
+  if(!closed){box.innerHTML="";return;}
+
+  const diff=Number(c.diff||0);
+  let cls,title,line;
+  if(Math.abs(diff)<0.01){
+    cls="status-ok";title="IMESAWAZISHWA";line="Hesabu zimesawazika kabisa.";
+  }else if(diff>0){
+    cls="status-over";title="IMEZIDI";line="Kiasi kilichozidi: <b>"+fmt(diff)+"</b>";
+  }else{
+    cls="status-bad";title="LOSS (PUNGUFU)";line="Kiasi kilichopungua: <b>"+fmt(Math.abs(diff))+"</b>";
+  }
+  box.innerHTML=`
+    <div class="section-title"><h3>Hali ya Hesabu ya Leo</h3></div>
+    <div class="panel closing-card" style="text-align:center">
+      <div style="display:flex;justify-content:center;color:var(--muted);margin-bottom:6px">${ic("lock",26)}</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Fedha imefungwa</div>
+      <div style="color:var(--muted);font-size:12.5px;margin-bottom:12px">${formatDateSwahili(c.date)}</div>
+      <div class="closing-status ${cls}" style="font-size:14px">${title}</div>
+      <div style="margin-top:10px;font-size:13.5px">${line}</div>
+    </div>`;
 }
 
 /* ================= DASHBOARD ================= */
@@ -939,7 +1019,7 @@ function renderDashboard(){
   $("bankSummary").textContent=fmt(t.banks);
   $("debtSummary").textContent=fmt(t.debts);
   $("totalSummary").textContent=fmt(t.totalOnHand);
-  $("cashValue").textContent=fmt(state.cash);
+  $("cashValue").innerHTML=state.cashPending?PENDING_HTML:fmt(state.cash);
 
   const difference=t.difference;
   // 100% = hesabu sawa na mtaji; 0% = mbali sana
@@ -994,12 +1074,12 @@ function renderDashboard(){
 }
 
 /* ================= SOURCE ROW (shared) ================= */
-function sourceRow(icon,name,type,amount,editFn,removeFn,id){
+function sourceRow(icon,name,type,amount,editFn,removeFn,id,pending){
   return `
   <div class="source-row">
     <div class="source-icon">${ic(icon)}</div>
     <div class="source-info"><div class="source-name">${escapeHTML(name)}</div><div class="source-type">${type}</div></div>
-    <div class="source-balance">${fmt(amount)}</div>
+    <div class="source-balance">${pending?PENDING_HTML:fmt(amount)}</div>
     <div class="source-actions">
       <button class="mini-btn" onclick="${editFn}('${id}')" title="Rekebisha">${ic("edit")}</button>
       <button class="mini-btn danger-btn" onclick="${removeFn}('${id}')" title="Futa">${ic("trash")}</button>
@@ -1014,7 +1094,7 @@ function renderNetworks(){
     el.innerHTML=emptyBlock("phone","Hakuna mtandao bado.<br>Bonyeza <b>Ongeza</b> kuanza.");
     return;
   }
-  el.innerHTML=state.networks.map(n=>sourceRow("phone",n.name,"Mtandao",n.balance,"editNetwork","removeNetwork",n.id)).join("");
+  el.innerHTML=state.networks.map(n=>sourceRow("phone",n.name,"Mtandao",n.balance,"editNetwork","removeNetwork",n.id,n.pending)).join("");
 }
 
 function addNetwork(){
@@ -1031,7 +1111,7 @@ async function saveNetwork(){
   if(balance<0){alert("Salio haliwezi kuwa chini ya sifuri.");return;}
   showLoading();
   try{
-    await collectionRef("networks").add({name:name,balance:balance,createdAt:TS()});
+    await collectionRef("networks").add({name:name,balance:balance,pending:false,createdAt:TS()});
     closeModal();await loadData();toast("Mtandao umeongezwa.");
   }catch(error){
     alert("Imeshindikana kuhifadhi: "+errorMessage(error));
@@ -1043,7 +1123,7 @@ function editNetwork(id){
   if(!n) return;
   openModal("Rekebisha "+n.name,`
     <div class="field"><label>Jina</label><input id="editNetworkName" class="input" value="${escapeHTML(n.name)}"></div>
-    <div class="field"><label>Salio / Float</label><input id="editNetworkBalance" class="input" type="number" min="0" value="${Number(n.balance||0)}"></div>
+    <div class="field"><label>Salio / Float</label><input id="editNetworkBalance" class="input" type="number" min="0" value="${n.pending?"":Number(n.balance||0)}" placeholder="Ingiza hesabu ya leo"></div>
     <button class="primary-btn" onclick="saveNetworkEdit('${id}')">Hifadhi Mabadiliko</button>`);
 }
 
@@ -1054,7 +1134,7 @@ async function saveNetworkEdit(id){
   if(balance<0){alert("Salio haliwezi kuwa chini ya sifuri.");return;}
   showLoading();
   try{
-    await collectionRef("networks").doc(id).set({name:name,balance:balance,updatedAt:TS()},{merge:true});
+    await collectionRef("networks").doc(id).set({name:name,balance:balance,pending:false,updatedAt:TS()},{merge:true});
     closeModal();await loadData();toast("Mtandao umebadilishwa.");
   }catch(error){
     alert("Imeshindikana: "+errorMessage(error));
@@ -1081,7 +1161,7 @@ function renderBanks(){
     el.innerHTML=emptyBlock("bank","Hakuna benki bado.<br>Bonyeza <b>Ongeza</b> kuanza.");
     return;
   }
-  el.innerHTML=state.banks.map(b=>sourceRow("bank",b.name,"Akaunti ya Benki",b.balance,"editBank","removeBank",b.id)).join("");
+  el.innerHTML=state.banks.map(b=>sourceRow("bank",b.name,"Akaunti ya Benki",b.balance,"editBank","removeBank",b.id,b.pending)).join("");
 }
 
 function addBank(){
@@ -1098,7 +1178,7 @@ async function saveBank(){
   if(balance<0){alert("Salio haliwezi kuwa chini ya sifuri.");return;}
   showLoading();
   try{
-    await collectionRef("banks").add({name:name,balance:balance,createdAt:TS()});
+    await collectionRef("banks").add({name:name,balance:balance,pending:false,createdAt:TS()});
     closeModal();await loadData();toast("Benki imeongezwa.");
   }catch(error){
     alert("Imeshindikana kuhifadhi: "+errorMessage(error));
@@ -1110,7 +1190,7 @@ function editBank(id){
   if(!b) return;
   openModal("Rekebisha "+b.name,`
     <div class="field"><label>Jina</label><input id="editBankName" class="input" value="${escapeHTML(b.name)}"></div>
-    <div class="field"><label>Salio</label><input id="editBankBalance" class="input" type="number" min="0" value="${Number(b.balance||0)}"></div>
+    <div class="field"><label>Salio</label><input id="editBankBalance" class="input" type="number" min="0" value="${b.pending?"":Number(b.balance||0)}" placeholder="Ingiza hesabu ya leo"></div>
     <button class="primary-btn" onclick="saveBankEdit('${id}')">Hifadhi Mabadiliko</button>`);
 }
 
@@ -1121,7 +1201,7 @@ async function saveBankEdit(id){
   if(balance<0){alert("Salio haliwezi kuwa chini ya sifuri.");return;}
   showLoading();
   try{
-    await collectionRef("banks").doc(id).set({name:name,balance:balance,updatedAt:TS()},{merge:true});
+    await collectionRef("banks").doc(id).set({name:name,balance:balance,pending:false,updatedAt:TS()},{merge:true});
     closeModal();await loadData();toast("Benki imebadilishwa.");
   }catch(error){
     alert("Imeshindikana: "+errorMessage(error));
@@ -1143,7 +1223,7 @@ async function removeBank(id){
 
 /* ================= CASH ================= */
 function updateCashPrompt(){
-  const value=prompt("Weka kiasi cha Cash/Taslimu:",state.cash);
+  const value=prompt("Weka kiasi cha Cash/Taslimu:",state.cashPending?"":state.cash);
   if(value===null) return;
   const amount=Number(value);
   if(!Number.isFinite(amount)||amount<0){alert("Kiasi si sahihi.");return;}
@@ -1154,6 +1234,7 @@ async function updateCash(value){
   showLoading();
   try{
     state.cash=Number(value||0);
+    state.cashPending=false;
     await saveBaseData();
     render();toast("Cash imebadilishwa.");
   }catch(error){
@@ -1406,14 +1487,122 @@ function adjustCapital(){
 }
 
 /* ================= TOTALS ================= */
-function getTotals(){
+function getTotals(date){
+  date=date||today();
   const networks=state.networks.reduce((s,n)=>s+Number(n.balance||0),0);
   const banks=state.banks.reduce((s,b)=>s+Number(b.balance||0),0);
   const cash=Number(state.cash||0);
   const debts=state.debts.reduce((s,x)=>s+Number(x.amount||0),0);
-  const totalOnHand=networks+banks+cash+debts;
+  const gross=networks+banks+cash+debts;
+  // Mauzo mengine (Gas, Accessories...) yanatolewa ili Jumla ya huduma za kifedha ilingane na Mtaji Mkuu
+  const otherSales=otherSalesTotal(date);
+  const totalOnHand=gross-otherSales;
   const capital=Number(state.mainCapital||0);
-  return {networks,banks,cash,debts,totalOnHand,capital,difference:totalOnHand-capital};
+  return {networks,banks,cash,debts,gross,otherSales,totalOnHand,capital,difference:totalOnHand-capital};
+}
+
+/* ================= MAUZO MENGINE ================= */
+// Mauzo ya vifaa nje ya Wakala. Pesa yake inaingia kwenye cash/mitandao/benki,
+// kwa hiyo jumla ya mauzo ya siku husika inatolewa kwenye jumla ya huduma za kifedha.
+const SALE_CATS=["Gas","Accessories","Nyingine"];
+function otherSalesOf(date){return state.otherSales.filter(s=>s.date===date);}
+function otherSalesTotal(date){return otherSalesOf(date).reduce((s,x)=>s+Number(x.amount||0),0);}
+
+function renderOtherSales(){
+  const el=$("otherSalesPanel");
+  const list=otherSalesOf(today()).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+  const total=list.reduce((s,x)=>s+Number(x.amount||0),0);
+  const rows=SALE_CATS.map(c=>({c:c,sum:list.filter(x=>x.category===c).reduce((s,x)=>s+Number(x.amount||0),0)}))
+    .filter(r=>r.c!=="Nyingine"||r.sum>0)
+    .map(r=>`<div class="closing-row"><span>${escapeHTML(r.c)}</span><strong>${fmt(r.sum)}</strong></div>`).join("");
+  const summary=`
+    <div class="closing-card">
+      ${rows}
+      <div class="closing-row"><span><b>Jumla Mauzo Mengine (leo)</b></span><strong>${fmt(total)}</strong></div>
+      <div class="list-meta" style="margin-top:8px">Kiasi hiki kinatolewa kwenye jumla ya huduma za kifedha. Mauzo haya yanajifuta saa 6 usiku (yanabaki kwenye ripoti ya kufunga hesabu).</div>
+    </div>`;
+  const items=list.length?list.map(s=>`
+    <div class="list-item">
+      <div class="list-main">
+        <div><div class="list-title">${escapeHTML(s.category||"Mauzo")}</div><div class="list-meta">${escapeHTML(s.description||"")}</div></div>
+        <div class="list-amount amount-in">${fmt(s.amount)}</div>
+      </div>
+      <div class="list-bottom">
+        <span></span>
+        <div style="display:flex;gap:5px">
+          <button class="mini-btn" onclick="editOtherSale('${s.id}')" title="Rekebisha">${ic("edit")}</button>
+          <button class="mini-btn danger-btn" onclick="removeOtherSale('${s.id}')" title="Futa">${ic("trash")}</button>
+        </div>
+      </div>
+    </div>`).join(""):emptyBlock("wallet","Hakuna mauzo mengine leo.<br>Bonyeza <b>Ongeza</b> kuandika.");
+  el.innerHTML=summary+items;
+}
+
+function saleCategoryOptions(selected){
+  return SALE_CATS.map(c=>`<option value="${c}"${c===selected?" selected":""}>${c}</option>`).join("");
+}
+
+function openOtherSale(){
+  openModal("Ongeza Mauzo Mengine",`
+    <div class="field"><label>Aina ya bidhaa</label><select id="saleCategory">${saleCategoryOptions("Gas")}</select></div>
+    <div class="field"><label>Kiasi cha mauzo</label><input id="saleAmount" class="input" type="number" min="1" placeholder="Mfano 25000"></div>
+    <div class="field"><label>Maelezo (si lazima)</label><input id="saleDescription" class="input" placeholder="Mfano Mtungi wa kg 6, chaja..."></div>
+    <div class="field"><label>Tarehe</label><input id="saleDate" class="input" type="date" value="${today()}"></div>
+    <button class="primary-btn" onclick="saveOtherSale()">Hifadhi Mauzo</button>`);
+}
+
+async function saveOtherSale(){
+  const category=$("saleCategory").value;
+  const amount=Number($("saleAmount").value||0);
+  const description=$("saleDescription").value.trim();
+  const date=$("saleDate").value||today();
+  if(!amount||amount<=0){alert("Weka kiasi sahihi.");return;}
+  showLoading();
+  try{
+    await collectionRef("otherSales").add({category:category,amount:amount,description:description,date:date,createdAt:TS()});
+    closeModal();await loadData();toast("Mauzo yamehifadhiwa.");
+  }catch(error){
+    alert("Imeshindikana kuhifadhi: "+errorMessage(error));
+  }finally{hideLoading();}
+}
+
+function editOtherSale(id){
+  const s=state.otherSales.find(x=>x.id===id);
+  if(!s) return;
+  openModal("Rekebisha Mauzo",`
+    <div class="field"><label>Aina ya bidhaa</label><select id="editSaleCategory">${saleCategoryOptions(s.category)}</select></div>
+    <div class="field"><label>Kiasi cha mauzo</label><input id="editSaleAmount" class="input" type="number" min="1" value="${Number(s.amount||0)}"></div>
+    <div class="field"><label>Maelezo (si lazima)</label><input id="editSaleDescription" class="input" value="${escapeHTML(s.description||"")}"></div>
+    <div class="field"><label>Tarehe</label><input id="editSaleDate" class="input" type="date" value="${s.date||today()}"></div>
+    <button class="primary-btn" onclick="saveOtherSaleEdit('${id}')">Hifadhi Mabadiliko</button>`);
+}
+
+async function saveOtherSaleEdit(id){
+  const category=$("editSaleCategory").value;
+  const amount=Number($("editSaleAmount").value||0);
+  const description=$("editSaleDescription").value.trim();
+  const date=$("editSaleDate").value||today();
+  if(!amount||amount<=0){alert("Weka kiasi sahihi.");return;}
+  showLoading();
+  try{
+    await collectionRef("otherSales").doc(id).set({category:category,amount:amount,description:description,date:date,updatedAt:TS()},{merge:true});
+    closeModal();await loadData();toast("Mauzo yamebadilishwa.");
+  }catch(error){
+    alert("Imeshindikana: "+errorMessage(error));
+  }finally{hideLoading();}
+}
+
+async function removeOtherSale(id){
+  const s=state.otherSales.find(x=>x.id===id);
+  if(!s) return;
+  if(!confirm("Futa mauzo ya "+(s.category||"")+" ("+fmt(s.amount)+")?")) return;
+  showLoading();
+  try{
+    await collectionRef("otherSales").doc(id).delete();
+    await loadData();toast("Mauzo yamefutwa.");
+  }catch(error){
+    alert("Imeshindikana kufuta: "+errorMessage(error));
+  }finally{hideLoading();}
 }
 
 /* ================= CLOSING PREVIEW ================= */
@@ -1431,7 +1620,9 @@ function renderClosingPreview(){
       <div class="closing-row"><span>Benki</span><strong>${fmt(t.banks)}</strong></div>
       <div class="closing-row"><span>Cash</span><strong>${fmt(t.cash)}</strong></div>
       <div class="closing-row"><span>Madeni</span><strong>${fmt(t.debts)}</strong></div>
-      <div class="closing-row"><span>Jumla Iliyopo</span><strong>${fmt(t.totalOnHand)}</strong></div>
+      <div class="closing-row"><span>Jumla (kabla ya mauzo mengine)</span><strong>${fmt(t.gross)}</strong></div>
+      <div class="closing-row"><span>Toa: Mauzo Mengine</span><strong>-${fmt(t.otherSales)}</strong></div>
+      <div class="closing-row"><span>Jumla Huduma za Kifedha</span><strong>${fmt(t.totalOnHand)}</strong></div>
       <div class="closing-row"><span>Mtaji Mkuu</span><strong>${fmt(t.capital)}</strong></div>
       <div class="closing-row"><span>Tofauti</span><strong style="color:${diffColor}">${diffLabel}</strong></div>
       <div class="closing-status ${cls}">${msg}</div>
@@ -1535,7 +1726,9 @@ function renderClosingPDF(c){
 
   text("MUHTASARI",40,y,12,true);y+=18;
   text("Mtaji Mkuu:",50,y,9);text(money(c.mainCapital),300,y,9,true);y+=16;
-  text("Jumla Iliyopo:",50,y,9);text(money(c.totalOnHand),300,y,9,true);y+=16;
+  text("Jumla Kabla ya Mauzo Mengine:",50,y,9);text(money(c.grossOnHand!=null?c.grossOnHand:c.totalOnHand),300,y,9,true);y+=16;
+  text("Mauzo Mengine (yametolewa):",50,y,9);text("-"+money(c.otherSalesTotal||0),300,y,9,true);y+=16;
+  text("Jumla Huduma za Kifedha:",50,y,9);text(money(c.totalOnHand),300,y,9,true);y+=16;
   text("Tofauti:",50,y,9);
   text((diffVal>0?"+":"-")+money(Math.abs(diffVal)),300,y,9,true);y+=23;
   line();
@@ -1575,6 +1768,8 @@ function renderClosingPDF(c){
   moves("MATUMIZI YA LEO",c.expensesToday||[],"Hakuna matumizi.","-");
   line();
   moves("ONGEZEKO LA LEO",c.increasesToday||[],"Hakuna ongezeko.","+");
+  line();
+  moves("MAUZO MENGINE",(c.otherSalesToday||[]).map(s=>({description:(s.category||"")+(s.description?" - "+s.description:""),amount:s.amount})),"Hakuna mauzo mengine.","");
 
   const pages=doc.internal.getNumberOfPages();
   for(let i=1;i<=pages;i++){
