@@ -2116,5 +2116,646 @@ document.addEventListener("keydown",function(e){
 });
 $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter") login();});
 </script>
+<!-- ===== MODULI YA GESI — bandika mara moja kabla ya </body> kwenye faili la Wakala ===== -->
+<script>
+(function(){
+'use strict';
+if(window.Gesi)return;
+
+/* Moduli huru: haigusi Mtaji Mkuu, Cash, Mitandao, Benki, Madeni, Matumizi, Ongezeko, Lipa wala kufunga hesabu.
+   Data yake iko kwenye collection yake: users/{uid}/gesi (kind: type | sale | buy | exp). */
+const COL='gesi';
+let S={types:[],sales:[],buys:[],exps:[]};
+let tab='home',period='today',uK='complete',uT='',bK='complete',bT='',showAll=false,loaded=false,busy=false;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>iso(new Date());
+const nowT=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());};
+const fmt=n=>'TSh '+Math.round(Number(n)||0).toLocaleString('en-US');
+const dmy=s=>{const p=String(s||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'-';};
+const gv=id=>{const e=$(id);return e?e.value:'';};
+const gn=id=>{const v=parseFloat(gv(id));return isNaN(v)?0:v;};
+const type=id=>S.types.find(t=>t.id===id);
+const ic=n=>'<svg class="gs-i"><use href="#i-'+n+'"/></svg>';
+const FLAME='<svg class="gs-i" viewBox="0 0 24 24"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/></svg>';
+
+function ref(){
+  const u=firebase.auth().currentUser;
+  if(!u)throw new Error('Hujaingia kwenye mfumo.');
+  return db.collection('users').doc(u.uid).collection(COL);
+}
+function msg(e){
+  if(e&&e.code==='permission-denied')return 'Ruhusa ya Firestore haijawekwa kwa collection ya "gesi".';
+  return (e&&e.message)||'Kuna tatizo limetokea.';
+}
+
+/* ---------- CSS ---------- */
+const CSS=`
+.gs{position:fixed;inset:0;z-index:86;background:var(--bg);color:var(--text);display:flex;flex-direction:column;font-size:14px}
+@media(min-width:1024px){.gs{left:256px}}
+.gs *,.gs-modal *{box-sizing:border-box}
+.gs-hide{display:none!important}
+.gs-i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;display:block}
+.gs-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));border-bottom:1px solid var(--border);background:var(--bg)}
+.gs-bar b{font-size:16px;letter-spacing:-.01em;display:block}
+.gs-bar small{color:var(--muted);font-size:11.5px}
+.gs-ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gs-body{flex:1;overflow-y:auto;padding:16px 14px 28px;width:100%;max-width:760px;margin:0 auto}
+.gs-nav{display:flex;border-top:1px solid var(--border);background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
+.gs-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 8px;font-size:10.5px;font-weight:600;color:var(--muted);background:none;border:0;cursor:pointer}
+.gs-nav button.on{color:var(--accent)}
+.gs label,.gs-modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 6px}
+.gs input,.gs select,.gs-modal input,.gs-modal select{width:100%;border:1px solid var(--border2);background:var(--surface);color:var(--text);padding:11px 13px;border-radius:10px;font-size:14px;outline:none}
+.gs input:focus,.gs select:focus,.gs-modal input:focus,.gs-modal select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentbg)}
+.gs-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gs-btn{width:100%;margin-top:16px;border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:#fff;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+:root[data-theme="dark"] .gs-btn{color:#04201c}
+.gs-btn.sec{background:var(--surface);color:var(--text);border:1px solid var(--border2)}
+.gs-chips{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto}
+.gs-chip{padding:7px 14px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.gs-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .gs-chip.on{color:#04201c}
+.gs-hero{border-radius:18px;padding:20px 20px 16px;color:#fff;background:linear-gradient(135deg,#0b1220 0%,#14284a 58%,#0f4d49 100%);margin-bottom:12px}
+.gs-hero small{display:block;color:rgba(255,255,255,.65);font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+.gs-hero .big{font-size:32px;font-weight:700;letter-spacing:-.03em;margin-top:4px;word-break:break-word}
+.gs-hero .neg{color:#fca5a5}
+.gs-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.gs-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+.gs-stat small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.gs-stat b{font-size:16px;letter-spacing:-.01em}
+.gs-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.gs-ct{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-size:15px}
+.gs-kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.gs-kv:last-of-type{border-bottom:0}
+.gs-kv span{color:var(--muted)}
+.gs-kv.strong{font-size:14px}
+.gs-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.gs-pills span{padding:4px 10px;border-radius:999px;background:var(--accentbg);color:var(--accent);font-size:11.5px;font-weight:700}
+.gs-sh{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 10px}
+.gs-sh h4{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+.gs-link{background:none;border:0;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer}
+.gs-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+.gs-rm{flex:1;min-width:0}
+.gs-rm b{display:block;font-size:13.5px}
+.gs-rm small{color:var(--muted);font-size:12px}
+.gs-ra{text-align:right;font-weight:700;font-size:13.5px;white-space:nowrap}
+.gs-ra small{display:block;font-size:11.5px;font-weight:600}
+.gs-x{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.gs-x.edit{color:var(--muted)}
+.gs-x .gs-i{width:15px;height:15px}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.gs-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--soft);padding:4px;border-radius:12px}
+.gs-seg button{padding:10px;border-radius:9px;border:0;background:none;color:var(--muted);font-weight:700;font-size:13.5px;cursor:pointer}
+.gs-seg button.on{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+.gs-hint{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--muted);font-size:12.5px;line-height:1.5}
+.gs-prev{margin-top:12px;padding:12px;border-radius:10px;background:var(--accentbg);font-size:13px;font-weight:600;text-align:center}
+.gs-empty{padding:34px 14px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.gs-modal{position:fixed;inset:0;z-index:120;background:var(--overlay);display:flex;align-items:flex-end;justify-content:center}
+.gs-sheet{width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:20px 18px calc(22px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:var(--surface);color:var(--text)}
+@media(min-width:640px){.gs-modal{align-items:center;padding:20px}.gs-sheet{border-radius:18px}}
+.gs-mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.gs-mh h3{font-size:16px}
+.gs-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);z-index:130;background:var(--toast-bg);color:var(--toast-text);padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;transition:transform .25s;max-width:90%;text-align:center}
+.gs-toast.show{transform:translateX(-50%) translateY(0)}
+`;
+
+/* ---------- HESABU ---------- */
+function stock(t){
+  let full=+t.openFull||0,empty=+t.openEmpty||0,cs=+t.openCS||0;
+  for(const x of S.sales){
+    if(x.typeId!==t.id)continue;
+    full-=x.qty;
+    if(x.saleKind==='complete')cs+=x.qty;else empty+=x.qty;
+  }
+  for(const x of S.buys){
+    if(x.typeId!==t.id)continue;
+    full+=x.qty;
+    if(x.buyKind==='complete')cs-=x.qty;else empty-=x.qty;
+  }
+  return {full:full,empty:empty,raw:cs,cs:Math.max(0,cs),total:full+empty};
+}
+function inP(d){
+  d=String(d||'');const t=today();
+  if(period==='all')return true;
+  if(period==='today')return d===t;
+  if(period==='month')return d.slice(0,7)===t.slice(0,7);
+  if(period==='week'){const x=new Date();x.setDate(x.getDate()-6);return d>=iso(x)&&d<=t;}
+  return true;
+}
+function stats(t){
+  const ss=S.sales.filter(x=>x.typeId===t.id&&inP(x.date));
+  const profit=ss.reduce((a,x)=>a+(x.price-x.cost)*x.qty,0);
+  const nC=ss.filter(x=>x.saleKind==='complete').reduce((a,x)=>a+x.qty,0);
+  const nB=ss.filter(x=>x.saleKind!=='complete').reduce((a,x)=>a+x.qty,0);
+  const exp=S.exps.filter(x=>x.target===t.id&&inP(x.date)).reduce((a,x)=>a+x.amount,0);
+  const rev=ss.reduce((a,x)=>a+x.price*x.qty,0);
+  return {profit:profit,rev:rev,qty:nC+nB,nC:nC,nB:nB,exp:exp,net:profit-exp};
+}
+const newest=(a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.time||'').localeCompare(String(a.time||''))||(b.ts||0)-(a.ts||0);
+function hist(list){
+  const l=list.slice().sort(newest);
+  return showAll?l.slice(0,100):l.filter(x=>x.date===today());
+}
+
+/* ---------- UI SHELL ---------- */
+function toast(m){
+  const el=$('gsToast');if(!el)return;
+  el.textContent=m;el.classList.add('show');
+  clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600);
+}
+function build(){
+  if($('gsScreen'))return;
+  const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
+  const wrap=document.createElement('div');
+  wrap.innerHTML=
+   '<div id="gsScreen" class="gs gs-hide">'+
+     '<div class="gs-bar"><button class="gs-ib" title="Rudi Wakala" onclick="Gesi.close()">'+ic('back')+'</button>'+
+     '<div><b>GESI</b><small>Mauzo, faida na stoo ya gesi</small></div></div>'+
+     '<div class="gs-body" id="gsBody"></div>'+
+     '<nav class="gs-nav" id="gsNav"></nav>'+
+   '</div>'+
+   '<div id="gsModal" class="gs-modal gs-hide"><div class="gs-sheet"><div class="gs-mh"><h3 id="gsMT"></h3>'+
+     '<button class="gs-ib" onclick="Gesi.closeModal()">'+ic('close')+'</button></div><div id="gsMC"></div></div></div>'+
+   '<div id="gsToast" class="gs-toast"></div>';
+  while(wrap.firstChild)document.body.appendChild(wrap.firstChild);
+  $('gsModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+}
+function inject(){
+  const top=document.querySelector('.top-actions');
+  if(top&&!$('gsTopBtn')){
+    const b=document.createElement('button');
+    b.id='gsTopBtn';b.className='icon-btn';b.title='Gesi';b.innerHTML=FLAME;
+    b.onclick=open;
+    top.insertBefore(b,top.children[1]||null);
+  }
+  const nb=document.querySelector('.nav-bottom');
+  if(nb&&!$('gsNavItem')){
+    const lbl=document.createElement('div');lbl.className='nav-section-label';lbl.textContent='Biashara nyingine';
+    const l=document.createElement('div');l.className='nav-list';
+    l.innerHTML='<button class="nav-item" id="gsNavItem"><span class="nav-icon">'+FLAME+'</span>Gesi</button>';
+    nb.parentNode.insertBefore(lbl,nb);nb.parentNode.insertBefore(l,nb);
+    $('gsNavItem').onclick=open;
+  }
+  document.querySelectorAll('.nav-item').forEach(b=>{
+    if(b.id!=='gsNavItem')b.addEventListener('click',close);
+  });
+}
+
+async function open(){
+  build();
+  if(typeof closeNavigator==='function')closeNavigator();
+  if(typeof closeLipaScreen==='function')closeLipaScreen();
+  $('gsScreen').classList.remove('gs-hide');
+  document.body.style.overflow='hidden';
+  if(!loaded)await load();else render();
+}
+function close(){
+  const s=$('gsScreen');
+  if(s&&!s.classList.contains('gs-hide')){
+    s.classList.add('gs-hide');
+    document.body.style.overflow='';
+  }
+  closeModal();
+}
+async function load(){
+  $('gsBody').innerHTML='<div class="gs-empty">Inapakia...</div>';
+  try{
+    const snap=await ref().get();
+    S={types:[],sales:[],buys:[],exps:[]};
+    snap.docs.forEach(d=>{
+      const x=Object.assign({id:d.id},d.data());
+      if(x.kind==='type')S.types.push(x);
+      else if(x.kind==='sale')S.sales.push(x);
+      else if(x.kind==='buy')S.buys.push(x);
+      else if(x.kind==='exp')S.exps.push(x);
+    });
+    S.types.sort((a,b)=>(a.ts||0)-(b.ts||0));
+    loaded=true;render();
+  }catch(e){
+    $('gsBody').innerHTML='<div class="gs-empty">Imeshindikana kupakia: '+esc(msg(e))+
+      '<br><br><button class="gs-btn" onclick="Gesi.reload()">Jaribu tena</button></div>';
+  }
+}
+function reload(){loaded=false;load();}
+
+function render(){
+  const v={home:vHome,uza:vUza,nunua:vNunua,mat:vMat,stoo:vStoo}[tab]();
+  $('gsBody').innerHTML=v;
+  const tabs=[['home','chart','Muhtasari'],['uza','coin','Uza'],['nunua','plus','Nunua'],['mat','out','Matumizi'],['stoo','grid','Stoo']];
+  $('gsNav').innerHTML=tabs.map(t=>'<button class="'+(tab===t[0]?'on':'')+'" onclick="Gesi.tab(\''+t[0]+'\')">'+ic(t[1])+t[2]+'</button>').join('');
+  if(tab==='uza'){uPrefill();uPrev();}
+  if(tab==='nunua'){bPrefill();bPrev();}
+}
+function setTab(t){tab=t;showAll=false;render();$('gsBody').scrollTop=0;}
+function setP(p){period=p;render();}
+function toggleAll(){showAll=!showAll;render();}
+
+function needType(){
+  return '<div class="gs-card gs-empty">Bado hujaongeza aina yoyote ya gesi.<br>Anza kwa kuongeza aina ya gesi (mfano Oryx 6kg).'+
+    '<button class="gs-btn" onclick="Gesi.typeModal()">'+ic('plus')+'Ongeza Aina ya Gesi</button></div>';
+}
+function histHead(title){
+  return '<div class="gs-sh"><h4>'+title+(showAll?' (zote)':' (leo)')+'</h4><button class="gs-link" onclick="Gesi.toggleAll()">'+(showAll?'Leo tu':'Onesha zote')+'</button></div>';
+}
+function row(title,meta,amt,cls,sub,kind,id){
+  return '<div class="gs-row"><div class="gs-rm"><b>'+title+'</b><small>'+meta+'</small></div>'+
+    '<div class="gs-ra '+cls+'">'+amt+(sub?'<small>'+sub+'</small>':'')+'</div>'+
+    '<button class="gs-x" title="Futa" onclick="Gesi.del(\''+kind+'\',\''+id+'\')">'+ic('trash')+'</button></div>';
+}
+function typeOptions(sel){
+  return S.types.map(t=>'<option value="'+t.id+'"'+(t.id===sel?' selected':'')+'>'+esc(t.name)+'</option>').join('');
+}
+
+/* ---------- MUHTASARI ---------- */
+function vHome(){
+  const chips='<div class="gs-chips">'+[['today','Leo'],['week','Wiki'],['month','Mwezi'],['all','Yote']].map(p=>
+    '<button class="gs-chip'+(period===p[0]?' on':'')+'" onclick="Gesi.setP(\''+p[0]+'\')">'+p[1]+'</button>').join('')+'</div>';
+  if(!S.types.length&&!S.exps.length)return chips+needType();
+  let tp=0,te=0,tr=0,tq=0;
+  const cards=S.types.map(t=>{
+    const s=stats(t),k=stock(t);tp+=s.profit;te+=s.exp;tr+=s.rev;tq+=s.qty;
+    return '<div class="gs-card"><div class="gs-ct"><b>'+esc(t.name)+'</b><b class="'+(s.net<0?'neg':'pos')+'">'+fmt(s.net)+'</b></div>'+
+      '<div class="gs-kv"><span>Complete zilizouzwa</span><b>'+s.nC+'</b></div>'+
+      '<div class="gs-kv"><span>Zilizobadilishwa</span><b>'+s.nB+'</b></div>'+
+      '<div class="gs-kv"><span>Jumla ya mauzo</span><b>'+fmt(s.rev)+'</b></div>'+
+      '<div class="gs-kv"><span>Faida ya mauzo</span><b class="pos">'+fmt(s.profit)+'</b></div>'+
+      '<div class="gs-kv"><span>Matumizi ya aina hii</span><b class="neg">-'+fmt(s.exp)+'</b></div>'+
+      '<div class="gs-kv strong"><span>Faida baki</span><b class="'+(s.net<0?'neg':'pos')+'">'+fmt(s.net)+'</b></div>'+
+      '<div class="gs-pills"><span>Zilizojaa '+k.full+'</span><span>Empty '+k.empty+'</span><span>Complete zilizouzwa '+k.cs+'</span></div></div>';
+  }).join('');
+  const me=S.exps.filter(x=>x.target==='main'&&inP(x.date)).reduce((a,x)=>a+x.amount,0);
+  const net=tp-te-me;
+  return chips+
+    '<div class="gs-hero"><small>Jumla ya Faida (baada ya matumizi)</small><div class="big '+(net<0?'neg':'')+'">'+fmt(net)+'</div></div>'+
+    '<div class="gs-stats"><div class="gs-stat"><small>Jumla ya mauzo yote</small><b>'+fmt(tr)+'</b></div>'+
+    '<div class="gs-stat"><small>Faida ya mauzo yote</small><b class="pos">'+fmt(tp)+'</b></div></div>'+
+    '<div class="gs-stats"><div class="gs-stat"><small>Matumizi yote</small><b class="neg">-'+fmt(te+me)+'</b></div>'+
+    '<div class="gs-stat"><small>Mitungi iliyouzwa</small><b>'+tq+'</b></div></div>'+
+    '<div class="gs-sh"><h4>Mauzo na faida kwa kila aina</h4></div>'+(cards||'<div class="gs-card gs-empty">Hakuna aina ya gesi.</div>')+
+    '<div class="gs-card"><div class="gs-kv"><span>Matumizi yaliyotoka Faida Kuu</span><b class="neg">-'+fmt(me)+'</b></div></div>'+
+    '<button class="gs-btn" onclick="Gesi.pdf()">'+ic('download')+'Pakua PDF ('+pLabel()+')</button>';
+}
+
+/* ---------- PDF ---------- */
+function pLabel(){
+  return {today:'Leo',week:'Wiki',month:'Mwezi',all:'Yote'}[period]||'';
+}
+function pFull(){
+  return {today:'Leo '+dmy(today()),week:'Siku 7 zilizopita',month:'Mwezi huu',all:'Muda wote'}[period]||'';
+}
+function pdf(){
+  if(!window.jspdf){toast('PDF library haijapakia. Hakikisha internet ipo.');return;}
+  const jsPDF=window.jspdf.jsPDF;
+  const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();
+  let y=45;
+  const T=(v,x,yy,sz,b)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(sz||10);doc.text(String(v),x,yy);};
+  const R=(v,yy,sz,b)=>{doc.setFont('helvetica',b?'bold':'normal');doc.setFontSize(sz||10);doc.text(String(v),W-50,yy,{align:'right'});};
+  const line=()=>{doc.setDrawColor(210,220,214);doc.line(40,y,W-40,y);y+=14;};
+  const chk=()=>{if(y>H-65){doc.addPage();y=45;}};
+  const kv=(l,v,b)=>{chk();T(l,50,y,9,b);R(v,y,9,true);y+=15;};
+  const asc=(a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.time||'').localeCompare(String(b.time||''))||(a.ts||0)-(b.ts||0);
+  const tname=id=>{const t=type(id);return t?t.name:'-';};
+
+  let tr=0,tp=0,tq=0,te=0;
+  const rows=S.types.map(t=>{const s=stats(t),k=stock(t);tr+=s.rev;tp+=s.profit;tq+=s.qty;te+=s.exp;return {t:t,s:s,k:k};});
+  const mainExps=S.exps.filter(x=>x.target==='main'&&inP(x.date));
+  const me=mainExps.reduce((a,x)=>a+x.amount,0);
+  const net=tp-te-me;
+
+  T('GODEN TECH',40,y,10,true);y+=16;
+  T('GESI',40,y,22,true);y+=17;
+  T('RIPOTI YA MAUZO NA FAIDA',40,y,11,true);y+=17;
+  T('Kipindi: '+pFull(),40,y,9);y+=13;
+  T('Imetolewa: '+dmy(today())+' '+nowT(),40,y,9);y+=16;
+  line();
+
+  T('MUHTASARI WA GESI ZOTE',40,y,12,true);y+=18;
+  kv('Jumla ya mauzo yote',fmt(tr));
+  kv('Faida ya mauzo yote',fmt(tp));
+  kv('Mitungi iliyouzwa',tq);
+  kv('Matumizi yaliyotoka kwenye aina',fmt(te));
+  kv('Matumizi yaliyotoka Faida Kuu',fmt(me));
+  kv('Jumla ya faida (baada ya matumizi)',fmt(net),true);
+  y+=4;line();
+
+  T('MAUZO NA FAIDA KWA KILA AINA',40,y,12,true);y+=18;
+  if(!rows.length){T('Hakuna aina ya gesi.',50,y,9);y+=16;}
+  rows.forEach(r=>{
+    chk();
+    T(r.t.name,50,y,10,true);y+=15;
+    kv('Complete zilizouzwa',r.s.nC);
+    kv('Zilizobadilishwa',r.s.nB);
+    kv('Jumla ya mauzo',fmt(r.s.rev));
+    kv('Faida ya mauzo',fmt(r.s.profit));
+    kv('Matumizi ya aina hii',fmt(r.s.exp));
+    kv('Faida baki',fmt(r.s.net),true);
+    kv('Stoo: zilizojaa / empty / complete zilizouzwa',r.k.full+' / '+r.k.empty+' / '+r.k.cs);
+    y+=4;
+  });
+  line();
+
+  function block(title,list,empty,fn){
+    chk();T(title,40,y,12,true);y+=17;
+    if(!list.length){T(empty,50,y,9);y+=16;}
+    else list.forEach(x=>{chk();const o=fn(x);T(o[0],50,y,8);R(o[1],y,8,true);y+=13;});
+    y+=6;line();
+  }
+  block('MAUZO',S.sales.filter(x=>inP(x.date)).sort(asc),'Hakuna mauzo.',x=>[
+    dmy(x.date)+' '+(x.time||'')+'  '+tname(x.typeId)+' - '+(x.saleKind==='complete'?'Complete':'Badilisha')+'  '+x.qty+' x '+fmt(x.price),
+    'Faida '+fmt((x.price-x.cost)*x.qty)]);
+  block('MANUNUZI',S.buys.filter(x=>inP(x.date)).sort(asc),'Hakuna manunuzi.',x=>[
+    dmy(x.date)+' '+(x.time||'')+'  '+tname(x.typeId)+' - '+(x.buyKind==='complete'?'Complete (kureplace)':'Ya kujaza')+'  '+x.qty+' x '+fmt(x.cost),
+    fmt(x.qty*x.cost)]);
+  block('MATUMIZI',S.exps.filter(x=>inP(x.date)).sort(asc),'Hakuna matumizi.',x=>[
+    dmy(x.date)+' '+(x.time||'')+'  '+(x.desc||'Matumizi')+' ('+(x.target==='main'?'Faida Kuu':tname(x.target))+')',
+    '-'+fmt(x.amount)]);
+
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);
+    doc.text('Goden Tech - godenvegula@gmail.com',40,H-30);
+    doc.text('© 2026 Goden Tech. All Rights Reserved.',40,H-18);
+    doc.text('Ukurasa '+i+' / '+pages,W-100,H-25);
+  }
+  doc.save('Gesi_Report_'+period+'_'+today()+'.pdf');
+}
+
+/* ---------- UZA ---------- */
+function vUza(){
+  if(!S.types.length)return needType();
+  if(!type(uT))uT=S.types[0].id;
+  const list=hist(S.sales).map(x=>{
+    const t=type(x.typeId),p=(x.price-x.cost)*x.qty;
+    return row(esc(t?t.name:'(imefutwa)')+' · '+(x.saleKind==='complete'?'Complete':'Badilisha'),
+      x.qty+' × '+fmt(x.price)+' · '+dmy(x.date)+' '+esc(x.time||''),fmt(x.price*x.qty),'','Faida '+fmt(p),'sale',x.id);
+  }).join('')||'<div class="gs-empty">Hakuna mauzo '+(showAll?'bado':'leo')+'.</div>';
+  return '<div class="gs-card">'+
+    '<label style="margin-top:0">Aina ya gesi</label><select id="gsUT" onchange="Gesi.uChange()">'+typeOptions(uT)+'</select>'+
+    '<label>Aina ya mauzo</label><div class="gs-seg"><button id="gsUK1" class="'+(uK==='complete'?'on':'')+'" onclick="Gesi.uKind(\'complete\')">Complete</button>'+
+    '<button id="gsUK2" class="'+(uK==='badilisha'?'on':'')+'" onclick="Gesi.uKind(\'badilisha\')">Badilisha</button></div>'+
+    '<div class="gs-hint" id="gsUH"></div>'+
+    '<div class="gs-2"><div><label>Idadi</label><input id="gsUQ" type="number" inputmode="numeric" min="1" value="1" oninput="Gesi.uPrev()"></div>'+
+    '<div><label>Bei ya kuuza (kwa mtungi)</label><input id="gsUP" type="number" inputmode="numeric" min="0" oninput="Gesi.uPrev()"></div></div>'+
+    '<label>Tarehe</label><input id="gsUD" type="date" value="'+today()+'">'+
+    '<div class="gs-prev" id="gsUV"></div>'+
+    '<button class="gs-btn" onclick="Gesi.saveSale()">Hifadhi Mauzo</button></div>'+
+    histHead('Mauzo')+list;
+}
+function uPrefill(){
+  const t=type(uT);if(!t)return;
+  $('gsUP').value=(uK==='complete'?t.priceComplete:t.priceBadilisha)||'';
+}
+function uPrev(){
+  const t=type(uT);if(!t)return;
+  const k=stock(t),q=Math.floor(gn('gsUQ')),p=gn('gsUP');
+  const cost=uK==='complete'?t.costComplete:t.costJaza;
+  $('gsUH').innerHTML=(uK==='complete'
+    ?'Complete: mteja anachukua mtungi na gesi. Zilizojaa zitapungua, na hesabu ya complete zilizouzwa itaongezeka.'
+    :'Badilisha: mteja analeta mtungi empty, unampa uliojaa. Zilizojaa zitapungua, empty zitaongezeka.')+
+    '<br><b>Zilizojaa: '+k.full+' · Empty: '+k.empty+'</b>';
+  const profit=(p-cost)*(q>0?q:0);
+  $('gsUV').innerHTML='Faida ya mauzo haya: <span class="'+(profit<0?'neg':'pos')+'">'+fmt(profit)+'</span>';
+}
+function uChange(){uT=gv('gsUT');uPrefill();uPrev();}
+function uKind(k){
+  uK=k;
+  $('gsUK1').classList.toggle('on',k==='complete');
+  $('gsUK2').classList.toggle('on',k==='badilisha');
+  uPrefill();uPrev();
+}
+async function saveSale(){
+  if(busy)return;
+  const t=type(uT);if(!t)return;
+  const qty=Math.floor(gn('gsUQ')),price=gn('gsUP');
+  if(!(qty>0)){toast('Weka idadi sahihi.');return;}
+  if(!(price>=0)||gv('gsUP')===''){toast('Weka bei ya kuuza.');return;}
+  const k=stock(t);
+  if(qty>k.full){toast('Zilizojaa zilizopo ni '+k.full+' tu.');return;}
+  busy=true;
+  try{
+    const d={kind:'sale',typeId:t.id,saleKind:uK,qty:qty,price:price,cost:Number((uK==='complete'?t.costComplete:t.costJaza)||0),
+      date:gv('gsUD')||today(),time:nowT(),ts:Date.now()};
+    const r=await ref().add(d);
+    S.sales.push(Object.assign({id:r.id},d));
+    toast('Mauzo yamehifadhiwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+
+/* ---------- NUNUA ---------- */
+function vNunua(){
+  if(!S.types.length)return needType();
+  if(!type(bT))bT=S.types[0].id;
+  const list=hist(S.buys).map(x=>{
+    const t=type(x.typeId);
+    return row(esc(t?t.name:'(imefutwa)')+' · '+(x.buyKind==='complete'?'Complete (kureplace)':'Ya kujaza'),
+      x.qty+' × '+fmt(x.cost)+' · '+dmy(x.date)+' '+esc(x.time||''),fmt(x.qty*x.cost),'neg','','buy',x.id);
+  }).join('')||'<div class="gs-empty">Hakuna manunuzi '+(showAll?'bado':'leo')+'.</div>';
+  return '<div class="gs-card">'+
+    '<label style="margin-top:0">Aina ya gesi</label><select id="gsBT" onchange="Gesi.bChange()">'+typeOptions(bT)+'</select>'+
+    '<label>Unanunua nini?</label><div class="gs-seg"><button id="gsBK1" class="'+(bK==='complete'?'on':'')+'" onclick="Gesi.bKind(\'complete\')">Complete (kureplace)</button>'+
+    '<button id="gsBK2" class="'+(bK==='jaza'?'on':'')+'" onclick="Gesi.bKind(\'jaza\')">Ya kujaza</button></div>'+
+    '<div class="gs-hint" id="gsBH"></div>'+
+    '<div class="gs-2"><div><label>Idadi</label><input id="gsBQ" type="number" inputmode="numeric" min="1" value="1" oninput="Gesi.bPrev()"></div>'+
+    '<div><label>Bei ya kununua (kwa mtungi)</label><input id="gsBP" type="number" inputmode="numeric" min="0" oninput="Gesi.bPrev()"></div></div>'+
+    '<label>Tarehe</label><input id="gsBD" type="date" value="'+today()+'">'+
+    '<div class="gs-prev" id="gsBV"></div>'+
+    '<button class="gs-btn" onclick="Gesi.saveBuy()">Hifadhi Manunuzi</button></div>'+
+    histHead('Manunuzi')+list;
+}
+function bPrefill(){
+  const t=type(bT);if(!t)return;
+  $('gsBP').value=(bK==='complete'?t.costComplete:t.costJaza)||'';
+}
+function bPrev(){
+  const t=type(bT);if(!t)return;
+  const k=stock(t),q=Math.floor(gn('gsBQ')),p=gn('gsBP');
+  $('gsBH').innerHTML=(bK==='complete'
+    ?'Complete ya kureplace: zilizojaa zitaongezeka na hesabu ya complete zilizouzwa itapungua.<br><b>Complete zilizouzwa: '+k.cs+'</b>'
+    :'Ya kujaza: unajaza mitungi empty. Empty zitapungua na zilizojaa zitaongezeka.<br><b>Empty zilizopo: '+k.empty+'</b>');
+  $('gsBV').innerHTML='Jumla ya gharama: <span class="neg">'+fmt(p*(q>0?q:0))+'</span>';
+}
+function bChange(){bT=gv('gsBT');bPrefill();bPrev();}
+function bKind(k){
+  bK=k;
+  $('gsBK1').classList.toggle('on',k==='complete');
+  $('gsBK2').classList.toggle('on',k==='jaza');
+  bPrefill();bPrev();
+}
+async function saveBuy(){
+  if(busy)return;
+  const t=type(bT);if(!t)return;
+  const qty=Math.floor(gn('gsBQ')),cost=gn('gsBP');
+  if(!(qty>0)){toast('Weka idadi sahihi.');return;}
+  if(!(cost>=0)||gv('gsBP')===''){toast('Weka bei ya kununua.');return;}
+  if(bK==='jaza'){
+    const k=stock(t);
+    if(qty>k.empty){toast('Empty zilizopo ni '+k.empty+' tu.');return;}
+  }
+  busy=true;
+  try{
+    const d={kind:'buy',typeId:t.id,buyKind:bK,qty:qty,cost:cost,date:gv('gsBD')||today(),time:nowT(),ts:Date.now()};
+    const r=await ref().add(d);
+    S.buys.push(Object.assign({id:r.id},d));
+    const key=bK==='complete'?'costComplete':'costJaza';
+    if(Number(t[key]||0)!==cost){
+      await ref().doc(t.id).set({[key]:cost},{merge:true});
+      t[key]=cost;
+    }
+    toast('Manunuzi yamehifadhiwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+
+/* ---------- MATUMIZI ---------- */
+function vMat(){
+  const tn=id=>id==='main'?'Faida Kuu':(type(id)?type(id).name:'(aina imefutwa)');
+  const list=hist(S.exps).map(x=>row(esc(x.desc||'Matumizi'),esc(tn(x.target))+' · '+dmy(x.date)+' '+esc(x.time||''),
+    '-'+fmt(x.amount),'neg','','exp',x.id)).join('')||'<div class="gs-empty">Hakuna matumizi '+(showAll?'bado':'leo')+'.</div>';
+  return '<div class="gs-card">'+
+    '<label style="margin-top:0">Matumizi ni ya nini?</label><input id="gsEN" placeholder="Mfano usafiri, kodi, chakula">'+
+    '<label>Kiasi</label><input id="gsEA" type="number" inputmode="numeric" min="1" placeholder="Mfano 5000">'+
+    '<label>Yatoke wapi?</label><select id="gsET"><option value="main">Faida Kuu (jumla)</option>'+
+    S.types.map(t=>'<option value="'+t.id+'">Aina: '+esc(t.name)+'</option>').join('')+'</select>'+
+    '<label>Tarehe</label><input id="gsED" type="date" value="'+today()+'">'+
+    '<button class="gs-btn" onclick="Gesi.saveExp()">Hifadhi Matumizi</button></div>'+
+    histHead('Matumizi')+list;
+}
+async function saveExp(){
+  if(busy)return;
+  const desc=gv('gsEN').trim(),amount=gn('gsEA');
+  if(!desc){toast('Andika matumizi ni ya nini.');return;}
+  if(!(amount>0)){toast('Weka kiasi sahihi.');return;}
+  busy=true;
+  try{
+    const d={kind:'exp',desc:desc,amount:amount,target:gv('gsET')||'main',date:gv('gsED')||today(),time:nowT(),ts:Date.now()};
+    const r=await ref().add(d);
+    S.exps.push(Object.assign({id:r.id},d));
+    toast('Matumizi yamehifadhiwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+
+/* ---------- STOO / AINA ---------- */
+function vStoo(){
+  let F=0,E=0,C=0;
+  const cards=S.types.map(t=>{
+    const k=stock(t);F+=k.full;E+=k.empty;C+=k.cs;
+    return '<div class="gs-card"><div class="gs-ct"><b>'+esc(t.name)+'</b><span style="display:flex;gap:6px">'+
+      '<button class="gs-x edit" title="Hariri" onclick="Gesi.typeModal(\''+t.id+'\')">'+ic('edit')+'</button>'+
+      '<button class="gs-x" title="Futa" onclick="Gesi.delType(\''+t.id+'\')">'+ic('trash')+'</button></span></div>'+
+      '<div class="gs-kv"><span>Zilizojaa (zimebaki)</span><b>'+k.full+'</b></div>'+
+      '<div class="gs-kv"><span>Empty</span><b>'+k.empty+'</b></div>'+
+      '<div class="gs-kv"><span>Complete zilizouzwa</span><b>'+k.cs+'</b></div>'+
+      '<div class="gs-kv strong"><span>Jumla ya mitungi (jaa + empty)</span><b>'+k.total+'</b></div>'+
+      '<div class="gs-pills"><span>Nunua complete '+fmt(t.costComplete)+'</span><span>Kujaza '+fmt(t.costJaza)+'</span></div>'+
+      '<div class="gs-pills"><span>Kuuza complete '+fmt(t.priceComplete)+'</span><span>Kuuza badilisha '+fmt(t.priceBadilisha)+'</span></div></div>';
+  }).join('');
+  return '<div class="gs-stats"><div class="gs-stat"><small>Zilizojaa zote</small><b>'+F+'</b></div>'+
+    '<div class="gs-stat"><small>Empty zote</small><b>'+E+'</b></div></div>'+
+    '<div class="gs-stats"><div class="gs-stat"><small>Complete zilizouzwa</small><b>'+C+'</b></div>'+
+    '<div class="gs-stat"><small>Jumla ya mitungi</small><b>'+(F+E)+'</b></div></div>'+
+    '<div class="gs-sh"><h4>Aina za gesi</h4></div>'+(cards||needType())+
+    (S.types.length?'<button class="gs-btn sec" onclick="Gesi.typeModal()">'+ic('plus')+'Ongeza Aina ya Gesi</button>':'');
+}
+
+function modal(title,html){$('gsMT').textContent=title;$('gsMC').innerHTML=html;$('gsModal').classList.remove('gs-hide');}
+function closeModal(){const m=$('gsModal');if(m)m.classList.add('gs-hide');}
+
+function typeModal(id){
+  build();
+  const t=id?type(id):null,k=t?stock(t):{full:0,empty:0,cs:0};
+  const v=key=>t&&t[key]?t[key]:'';
+  modal(t?'Hariri Aina ya Gesi':'Aina Mpya ya Gesi',
+    '<label>Jina la gesi</label><input id="gtN" value="'+esc(t?t.name:'')+'" placeholder="Mfano Oryx 6kg">'+
+    '<div class="gs-2"><div><label>Nunua Complete (bei)</label><input id="gtCC" type="number" inputmode="numeric" value="'+v('costComplete')+'"></div>'+
+    '<div><label>Kujaza / refill (bei)</label><input id="gtCJ" type="number" inputmode="numeric" value="'+v('costJaza')+'"></div></div>'+
+    '<div class="gs-2"><div><label>Kuuza Complete (bei)</label><input id="gtPC" type="number" inputmode="numeric" value="'+v('priceComplete')+'"></div>'+
+    '<div><label>Kuuza Badilisha (bei)</label><input id="gtPB" type="number" inputmode="numeric" value="'+v('priceBadilisha')+'"></div></div>'+
+    '<div class="gs-2"><div><label>Zilizojaa zilizopo</label><input id="gtF" type="number" inputmode="numeric" value="'+k.full+'"></div>'+
+    '<div><label>Empty zilizopo</label><input id="gtE" type="number" inputmode="numeric" value="'+k.empty+'"></div></div>'+
+    '<label>Complete zilizouzwa (zinazosubiri kureplace)</label><input id="gtS" type="number" inputmode="numeric" value="'+k.cs+'">'+
+    '<button class="gs-btn" onclick="Gesi.saveType('+(t?"'"+t.id+"'":'null')+')">Hifadhi</button>');
+}
+async function saveType(id){
+  if(busy)return;
+  const name=gv('gtN').trim();
+  if(!name){toast('Andika jina la gesi.');return;}
+  const n=x=>Math.max(0,gn(x));
+  const data={name:name,costComplete:n('gtCC'),costJaza:n('gtCJ'),priceComplete:n('gtPC'),priceBadilisha:n('gtPB')};
+  const wf=Math.round(n('gtF')),we=Math.round(n('gtE')),ws=Math.round(n('gtS'));
+  busy=true;
+  try{
+    if(id){
+      const t=type(id),k=stock(t);
+      data.openFull=(+t.openFull||0)+(wf-k.full);
+      data.openEmpty=(+t.openEmpty||0)+(we-k.empty);
+      data.openCS=(+t.openCS||0)+(ws-k.raw);
+      await ref().doc(id).set(data,{merge:true});
+      Object.assign(t,data);
+    }else{
+      const d=Object.assign({kind:'type',openFull:wf,openEmpty:we,openCS:ws,ts:Date.now()},data);
+      const r=await ref().add(d);
+      S.types.push(Object.assign({id:r.id},d));
+    }
+    closeModal();toast('Imehifadhiwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+async function delType(id){
+  const t=type(id);if(!t)return;
+  if(!confirm('Futa aina "'+t.name+'" pamoja na mauzo na manunuzi yake yote?'))return;
+  if(busy)return;busy=true;
+  try{
+    const ids=[id].concat(S.sales.filter(x=>x.typeId===id).map(x=>x.id),S.buys.filter(x=>x.typeId===id).map(x=>x.id));
+    for(let i=0;i<ids.length;i+=400){
+      const b=db.batch();
+      ids.slice(i,i+400).forEach(x=>b.delete(ref().doc(x)));
+      await b.commit();
+    }
+    S.types=S.types.filter(x=>x.id!==id);
+    S.sales=S.sales.filter(x=>x.typeId!==id);
+    S.buys=S.buys.filter(x=>x.typeId!==id);
+    const owned=S.exps.filter(x=>x.target===id);
+    for(const x of owned){
+      await ref().doc(x.id).set({target:'main'},{merge:true});
+      x.target='main';
+    }
+    toast('Aina imefutwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+async function del(kind,id){
+  const map={sale:'sales',buy:'buys',exp:'exps'};
+  const arr=map[kind];if(!arr)return;
+  if(!confirm('Futa rekodi hii?'))return;
+  if(busy)return;busy=true;
+  try{
+    await ref().doc(id).delete();
+    S[arr]=S[arr].filter(x=>x.id!==id);
+    toast('Imefutwa.');render();
+  }catch(e){toast(msg(e));}
+  finally{busy=false;}
+}
+
+window.Gesi={open:open,close:close,reload:reload,tab:setTab,setP:setP,toggleAll:toggleAll,pdf:pdf,
+  uChange:uChange,uKind:uKind,uPrev:uPrev,saveSale:saveSale,
+  bChange:bChange,bKind:bKind,bPrev:bPrev,saveBuy:saveBuy,saveExp:saveExp,
+  typeModal:typeModal,saveType:saveType,delType:delType,del:del,closeModal:closeModal};
+
+/* ---------- ANZA ---------- */
+inject();
+try{
+  firebase.auth().onAuthStateChanged(function(u){
+    S={types:[],sales:[],buys:[],exps:[]};loaded=false;
+    if(!u)close();
+  });
+}catch(e){}
+})();
+</script>
 </body>
 </html>
