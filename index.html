@@ -274,6 +274,8 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .spinner{width:32px;height:32px;border:3px solid var(--track);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+.wk-sortbar{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12px;font-weight:600;color:var(--muted)}
+.wk-sortbar select{width:auto;flex:0 1 230px;padding:7px 30px 7px 10px;font-size:12.5px;border-radius:8px}
 /* LIPA PANEL */
 .lipa-panel{position:fixed;inset:0;z-index:85;background:var(--bg);overflow-y:auto}
 .lipa-bar{position:sticky;top:0;z-index:10;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
@@ -543,11 +545,13 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <section id="networks" class="section">
       <div class="section-title"><h3>Mitandao</h3><button class="secondary-btn" onclick="addNetwork()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="networks"></div>
       <div id="networksList" class="panel"></div>
     </section>
 
     <section id="banks" class="section">
       <div class="section-title"><h3>Benki</h3><button class="secondary-btn" onclick="addBank()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="banks"></div>
       <div id="banksList" class="panel"></div>
     </section>
 
@@ -564,6 +568,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <section id="debts" class="section">
       <div class="section-title"><h3>Madeni</h3><button class="secondary-btn" onclick="addDebt()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="debts"></div>
       <div id="debtsList" class="panel"></div>
     </section>
 
@@ -574,11 +579,13 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <section id="expenses" class="section">
       <div class="section-title"><h3>Matumizi</h3><button class="secondary-btn" onclick="openExpense()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="expenses"></div>
       <div id="expensesList" class="panel"></div>
     </section>
 
     <section id="increases" class="section">
       <div class="section-title"><h3>Ongezeko</h3><button class="secondary-btn" onclick="openIncrease('commission')"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="increases"></div>
       <div id="increasesList" class="panel"></div>
     </section>
 
@@ -589,6 +596,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <section id="history" class="section">
       <div class="section-title"><h3>Historia ya Kufunga</h3></div>
+      <div class="wk-sortbar" data-sort="closings"></div>
       <div id="closingsList" class="panel"></div>
     </section>
   </main>
@@ -629,11 +637,13 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <div class="lipa-cols">
       <section class="section">
         <div class="section-title"><h3>Faida ya Lipa (Leo)</h3><button class="secondary-btn" onclick="openLipaEntry('faida')"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-        <div id="lipaFaidaList" class="panel"></div>
+        <div class="wk-sortbar" data-sort="lipaFaida"></div>
+      <div id="lipaFaidaList" class="panel"></div>
       </section>
       <section class="section">
         <div class="section-title"><h3>Matumizi ya Lipa (Leo)</h3><button class="secondary-btn" onclick="openLipaEntry('matumizi')"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-        <div id="lipaMatumiziList" class="panel"></div>
+        <div class="wk-sortbar" data-sort="lipaMatumizi"></div>
+      <div id="lipaMatumiziList" class="panel"></div>
       </section>
     </div>
 
@@ -644,6 +654,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <section class="section">
       <div class="section-title"><h3>Historia ya Miezi Iliyofungwa</h3></div>
+      <div class="wk-sortbar" data-sort="lipaClosings"></div>
       <div id="lipaClosingsList" class="panel"></div>
     </section>
 
@@ -963,8 +974,94 @@ function stopAutoCloseWatcher(){
   if(autoCloseTimer){clearInterval(autoCloseTimer);autoCloseTimer=null;}
 }
 
+/* ================= SORT (kupanga orodha) ================= */
+const SORT_KEY="wk-sort";
+let sortPref={};
+try{sortPref=JSON.parse(localStorage.getItem(SORT_KEY)||"{}")||{};}catch(e){sortPref={};}
+const _n=v=>Number(v||0);
+const _s=(a,b)=>String(a||"").localeCompare(String(b||""),"sw",{sensitivity:"base"});
+const _d=(a,b)=>String(a||"").localeCompare(String(b||""));
+const _t=x=>(x&&x.createdAt&&x.createdAt.seconds)||0;
+const _byBal=[
+  ["def","Kawaida",null],
+  ["nameAsc","Jina (A-Z)",(a,b)=>_s(a.name,b.name)],
+  ["nameDesc","Jina (Z-A)",(a,b)=>_s(b.name,a.name)],
+  ["big","Salio kubwa kwanza",(a,b)=>_n(b.balance)-_n(a.balance)],
+  ["small","Salio ndogo kwanza",(a,b)=>_n(a.balance)-_n(b.balance)]
+];
+const _byMove=[
+  ["new","Tarehe (mpya kwanza)",(a,b)=>_d(b.date,a.date)||_t(b)-_t(a)],
+  ["old","Tarehe (zamani kwanza)",(a,b)=>_d(a.date,b.date)||_t(a)-_t(b)],
+  ["big","Kiasi kikubwa kwanza",(a,b)=>_n(b.amount)-_n(a.amount)],
+  ["small","Kiasi kidogo kwanza",(a,b)=>_n(a.amount)-_n(b.amount)],
+  ["desc","Maelezo (A-Z)",(a,b)=>_s(a.description,b.description)]
+];
+const _byTime=[
+  ["first","Saa (za asubuhi kwanza)",(a,b)=>_d(a.time,b.time)],
+  ["last","Saa (za mwisho kwanza)",(a,b)=>_d(b.time,a.time)],
+  ["big","Kiasi kikubwa kwanza",(a,b)=>_n(b.amount)-_n(a.amount)],
+  ["small","Kiasi kidogo kwanza",(a,b)=>_n(a.amount)-_n(b.amount)]
+];
+const SORTS={
+  networks:_byBal,
+  banks:_byBal,
+  debts:[
+    ["def","Kawaida",null],
+    ["nameAsc","Jina (A-Z)",(a,b)=>_s(a.name,b.name)],
+    ["nameDesc","Jina (Z-A)",(a,b)=>_s(b.name,a.name)],
+    ["big","Kiasi kikubwa kwanza",(a,b)=>_n(b.amount)-_n(a.amount)],
+    ["small","Kiasi kidogo kwanza",(a,b)=>_n(a.amount)-_n(b.amount)],
+    ["new","Tarehe (mpya kwanza)",(a,b)=>_d(b.date,a.date)||_t(b)-_t(a)],
+    ["old","Tarehe (zamani kwanza)",(a,b)=>_d(a.date,b.date)||_t(a)-_t(b)]
+  ],
+  expenses:_byMove,
+  increases:_byMove,
+  closings:[
+    ["new","Tarehe (mpya kwanza)",(a,b)=>_d(b.date,a.date)],
+    ["old","Tarehe (zamani kwanza)",(a,b)=>_d(a.date,b.date)],
+    ["big","Jumla kubwa kwanza",(a,b)=>_n(b.totalOnHand)-_n(a.totalOnHand)],
+    ["small","Jumla ndogo kwanza",(a,b)=>_n(a.totalOnHand)-_n(b.totalOnHand)],
+    ["diff","Tofauti kubwa kwanza",(a,b)=>Math.abs(_n(b.diff))-Math.abs(_n(a.diff))]
+  ],
+  lipaFaida:_byTime,
+  lipaMatumizi:_byTime,
+  lipaClosings:[
+    ["new","Mwezi (mpya kwanza)",(a,b)=>_d(b.periodEnd,a.periodEnd)],
+    ["old","Mwezi (zamani kwanza)",(a,b)=>_d(a.periodEnd,b.periodEnd)],
+    ["big","Baki kubwa kwanza",(a,b)=>_n(b.baki)-_n(a.baki)],
+    ["small","Baki ndogo kwanza",(a,b)=>_n(a.baki)-_n(b.baki)]
+  ]
+};
+function curSort(key){
+  const opts=SORTS[key];
+  return opts.some(o=>o[0]===sortPref[key])?sortPref[key]:opts[0][0];
+}
+function sortList(key,list){
+  const o=SORTS[key].find(x=>x[0]===curSort(key));
+  const copy=[...list];
+  return o&&o[2]?copy.sort(o[2]):copy;
+}
+function syncSortBars(){
+  document.querySelectorAll(".wk-sortbar[data-sort]").forEach(bar=>{
+    const k=bar.dataset.sort;
+    if(!SORTS[k])return;
+    if(!bar.firstChild){
+      bar.innerHTML='<span>Panga</span><select aria-label="Panga orodha" onchange="setSort(\''+k+'\',this.value)">'+
+        SORTS[k].map(o=>'<option value="'+o[0]+'">'+o[1]+'</option>').join("")+'</select>';
+    }
+    const sel=bar.querySelector("select");
+    if(sel)sel.value=curSort(k);
+  });
+}
+function setSort(key,val){
+  sortPref[key]=val;
+  try{localStorage.setItem(SORT_KEY,JSON.stringify(sortPref));}catch(e){}
+  if(key.indexOf("lipa")===0)renderLipaScreen();else render();
+}
+
 /* ================= RENDER ================= */
 function render(){
+  syncSortBars();
   renderDashboard();renderNetworks();renderBanks();renderDebts();
   renderExpenses();renderIncreases();renderClosingPreview();renderClosings();
   renderOtherSales();
@@ -1094,7 +1191,7 @@ function renderNetworks(){
     el.innerHTML=emptyBlock("phone","Hakuna mtandao bado.<br>Bonyeza <b>Ongeza</b> kuanza.");
     return;
   }
-  el.innerHTML=state.networks.map(n=>sourceRow("phone",n.name,"Mtandao",n.balance,"editNetwork","removeNetwork",n.id,n.pending)).join("");
+  el.innerHTML=sortList("networks",state.networks).map(n=>sourceRow("phone",n.name,"Mtandao",n.balance,"editNetwork","removeNetwork",n.id,n.pending)).join("");
 }
 
 function addNetwork(){
@@ -1161,7 +1258,7 @@ function renderBanks(){
     el.innerHTML=emptyBlock("bank","Hakuna benki bado.<br>Bonyeza <b>Ongeza</b> kuanza.");
     return;
   }
-  el.innerHTML=state.banks.map(b=>sourceRow("bank",b.name,"Akaunti ya Benki",b.balance,"editBank","removeBank",b.id,b.pending)).join("");
+  el.innerHTML=sortList("banks",state.banks).map(b=>sourceRow("bank",b.name,"Akaunti ya Benki",b.balance,"editBank","removeBank",b.id,b.pending)).join("");
 }
 
 function addBank(){
@@ -1250,7 +1347,7 @@ function renderDebts(){
     el.innerHTML=emptyBlock("file","Hakuna deni lililohifadhiwa.<br>Bonyeza <b>Ongeza</b> kuanza.");
     return;
   }
-  el.innerHTML=state.debts.map(x=>{
+  el.innerHTML=sortList("debts",state.debts).map(x=>{
     const type=(x.date?escapeHTML(formatDateSwahili(x.date)):"Deni")+(x.note?" · "+escapeHTML(x.note):"");
     return sourceRow("file",x.name,type,x.amount,"editDebt","removeDebt",x.id);
   }).join("");
@@ -1367,7 +1464,7 @@ async function submitExpense(){
 
 function renderExpenses(){
   const el=$("expensesList");
-  const list=[...state.expenses].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,20);
+  const list=sortList("expenses",state.expenses).slice(0,20);
   if(!list.length){el.innerHTML=emptyBlock("list","Hakuna matumizi yaliyohifadhiwa.");return;}
   el.innerHTML=list.map(e=>`
     <div class="list-item">
@@ -1441,7 +1538,7 @@ async function submitIncrease(){
 
 function renderIncreases(){
   const el=$("increasesList");
-  const list=[...state.increases].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))).slice(0,20);
+  const list=sortList("increases",state.increases).slice(0,20);
   if(!list.length){el.innerHTML=emptyBlock("trend","Hakuna ongezeko lililohifadhiwa.");return;}
   el.innerHTML=list.map(i=>`
     <div class="list-item">
@@ -1657,7 +1754,7 @@ async function closeToday(){
 /* ================= CLOSINGS HISTORY ================= */
 function renderClosings(){
   const el=$("closingsList");
-  const list=[...state.closings].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+  const list=sortList("closings",state.closings);
   if(!list.length){el.innerHTML=emptyBlock("calendar","Hakuna historia ya kufunga hesabu.");return;}
   el.innerHTML=list.map(c=>{
     const diffVal=Number(c.diff||0);
@@ -1839,6 +1936,7 @@ function getLipaPeriodTotals(){
 }
 
 function renderLipaScreen(){
+  syncSortBars();
   $("lipaDayBadge").innerHTML=dayBadgeHTML();
   const d=getLipaDayTotals(today());
   $("lipaTodayFaida").textContent=fmt(d.faida);
@@ -1859,9 +1957,8 @@ function renderLipaScreen(){
 
 function renderLipaEntries(type,elId){
   const el=$(elId);
-  const list=state.lipa.entries
-    .filter(e=>e.type===type&&e.date===today())
-    .sort((a,b)=>String(a.time||"").localeCompare(String(b.time||"")));
+  const list=sortList(type==="faida"?"lipaFaida":"lipaMatumizi",
+    state.lipa.entries.filter(e=>e.type===type&&e.date===today()));
   if(!list.length){
     el.innerHTML=emptyBlock(type==="faida"?"trend":"out","Hakuna "+(type==="faida"?"faida":"matumizi")+" ya lipa leo bado.");
     return;
@@ -1994,7 +2091,7 @@ async function closeLipaMonth(){
 
 function renderLipaClosings(){
   const el=$("lipaClosingsList");
-  const list=[...state.lipa.closings].sort((a,b)=>String(b.periodEnd||"").localeCompare(String(a.periodEnd||"")));
+  const list=sortList("lipaClosings",state.lipa.closings);
   if(!list.length){el.innerHTML=emptyBlock("calendar","Hakuna mwezi uliofungwa bado.");return;}
   el.innerHTML=list.map(c=>{
     const baki=Number(c.baki||0);
@@ -2126,7 +2223,9 @@ if(window.Gesi)return;
    Data yake iko kwenye collection yake: users/{uid}/gesi (kind: type | sale | buy | exp). */
 const COL='gesi';
 let S={types:[],sales:[],buys:[],exps:[]};
-let tab='home',period='today',uK='complete',uT='',bK='complete',bT='',showAll=false,loaded=false,busy=false;
+let tab='home',period='all',uK='complete',uT='',bK='complete',bT='',showAll=true,loaded=false,busy=false;
+let gSort='new';
+try{gSort=localStorage.getItem('wk-sort-gesi')||'new';}catch(e){}
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2197,6 +2296,8 @@ const CSS=`
 .gs-sh{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 10px}
 .gs-sh h4{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
 .gs-link{background:none;border:0;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer}
+.gs-shr{display:flex;align-items:center;gap:10px}
+.gs .gs-sort,.gs-shr .gs-sort{width:auto;max-width:150px;padding:6px 8px;font-size:12px;border-radius:8px}
 .gs-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px}
 .gs-rm{flex:1;min-width:0}
 .gs-rm b{display:block;font-size:13.5px}
@@ -2255,9 +2356,19 @@ function stats(t){
   return {profit:profit,rev:rev,qty:nC+nB,nC:nC,nB:nB,exp:exp,net:profit-exp};
 }
 const newest=(a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.time||'').localeCompare(String(a.time||''))||(b.ts||0)-(a.ts||0);
-function hist(list){
-  const l=list.slice().sort(newest);
-  return showAll?l.slice(0,100):l.filter(x=>x.date===today());
+const GSORTS=[['new','Mpya kwanza'],['old','Zamani kwanza'],['big','Kiasi kikubwa'],['small','Kiasi kidogo'],['name','Jina (A-Z)']];
+function hist(list,amt,nm){
+  if(!GSORTS.some(o=>o[0]===gSort))gSort='new';
+  const cmp={
+    new:newest,
+    old:(a,b)=>newest(b,a),
+    big:(a,b)=>amt(b)-amt(a)||newest(a,b),
+    small:(a,b)=>amt(a)-amt(b)||newest(a,b),
+    name:(a,b)=>String(nm(a)||'').localeCompare(String(nm(b)||''),'sw',{sensitivity:'base'})||newest(a,b)
+  }[gSort];
+  const base=showAll?list.slice():list.filter(x=>x.date===today());
+  const l=base.sort(cmp);
+  return l;
 }
 
 /* ---------- UI SHELL ---------- */
@@ -2349,16 +2460,20 @@ function render(){
   if(tab==='uza'){uPrefill();uPrev();}
   if(tab==='nunua'){bPrefill();bPrev();}
 }
-function setTab(t){tab=t;showAll=false;render();$('gsBody').scrollTop=0;}
+function setTab(t){tab=t;render();$('gsBody').scrollTop=0;}
 function setP(p){period=p;render();}
 function toggleAll(){showAll=!showAll;render();}
+function setSort(v){gSort=v;try{localStorage.setItem('wk-sort-gesi',v);}catch(e){}render();}
 
 function needType(){
   return '<div class="gs-card gs-empty">Bado hujaongeza aina yoyote ya gesi.<br>Anza kwa kuongeza aina ya gesi (mfano Oryx 6kg).'+
     '<button class="gs-btn" onclick="Gesi.typeModal()">'+ic('plus')+'Ongeza Aina ya Gesi</button></div>';
 }
 function histHead(title){
-  return '<div class="gs-sh"><h4>'+title+(showAll?' (zote)':' (leo)')+'</h4><button class="gs-link" onclick="Gesi.toggleAll()">'+(showAll?'Leo tu':'Onesha zote')+'</button></div>';
+  return '<div class="gs-sh"><h4>'+title+(showAll?' (zote)':' (leo)')+'</h4><div class="gs-shr">'+
+    '<select class="gs-sort" aria-label="Panga" onchange="Gesi.setSort(this.value)">'+
+    GSORTS.map(o=>'<option value="'+o[0]+'"'+(o[0]===gSort?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>'+
+    '<button class="gs-link" onclick="Gesi.toggleAll()">'+(showAll?'Leo tu':'Onesha zote')+'</button></div></div>';
 }
 function row(title,meta,amt,cls,sub,kind,id){
   return '<div class="gs-row"><div class="gs-rm"><b>'+title+'</b><small>'+meta+'</small></div>'+
@@ -2488,7 +2603,7 @@ function pdf(){
 function vUza(){
   if(!S.types.length)return needType();
   if(!type(uT))uT=S.types[0].id;
-  const list=hist(S.sales).map(x=>{
+  const list=hist(S.sales,x=>x.price*x.qty,x=>(type(x.typeId)||{}).name).map(x=>{
     const t=type(x.typeId),p=(x.price-x.cost)*x.qty;
     return row(esc(t?t.name:'(imefutwa)')+' · '+(x.saleKind==='complete'?'Complete':'Badilisha'),
       x.qty+' × '+fmt(x.price)+' · '+dmy(x.date)+' '+esc(x.time||''),fmt(x.price*x.qty),'','Faida '+fmt(p),'sale',x.id);
@@ -2550,7 +2665,7 @@ async function saveSale(){
 function vNunua(){
   if(!S.types.length)return needType();
   if(!type(bT))bT=S.types[0].id;
-  const list=hist(S.buys).map(x=>{
+  const list=hist(S.buys,x=>x.qty*x.cost,x=>(type(x.typeId)||{}).name).map(x=>{
     const t=type(x.typeId);
     return row(esc(t?t.name:'(imefutwa)')+' · '+(x.buyKind==='complete'?'Complete (kureplace)':'Ya kujaza'),
       x.qty+' × '+fmt(x.cost)+' · '+dmy(x.date)+' '+esc(x.time||''),fmt(x.qty*x.cost),'neg','','buy',x.id);
@@ -2614,7 +2729,7 @@ async function saveBuy(){
 /* ---------- MATUMIZI ---------- */
 function vMat(){
   const tn=id=>id==='main'?'Faida Kuu':(type(id)?type(id).name:'(aina imefutwa)');
-  const list=hist(S.exps).map(x=>row(esc(x.desc||'Matumizi'),esc(tn(x.target))+' · '+dmy(x.date)+' '+esc(x.time||''),
+  const list=hist(S.exps,x=>x.amount,x=>x.desc).map(x=>row(esc(x.desc||'Matumizi'),esc(tn(x.target))+' · '+dmy(x.date)+' '+esc(x.time||''),
     '-'+fmt(x.amount),'neg','','exp',x.id)).join('')||'<div class="gs-empty">Hakuna matumizi '+(showAll?'bado':'leo')+'.</div>';
   return '<div class="gs-card">'+
     '<label style="margin-top:0">Matumizi ni ya nini?</label><input id="gsEN" placeholder="Mfano usafiri, kodi, chakula">'+
@@ -2742,7 +2857,7 @@ async function del(kind,id){
   finally{busy=false;}
 }
 
-window.Gesi={open:open,close:close,reload:reload,tab:setTab,setP:setP,toggleAll:toggleAll,pdf:pdf,
+window.Gesi={open:open,close:close,reload:reload,tab:setTab,setP:setP,toggleAll:toggleAll,setSort:setSort,pdf:pdf,
   uChange:uChange,uKind:uKind,uPrev:uPrev,saveSale:saveSale,
   bChange:bChange,bKind:bKind,bPrev:bPrev,saveBuy:saveBuy,saveExp:saveExp,
   typeModal:typeModal,saveType:saveType,delType:delType,del:del,closeModal:closeModal};
