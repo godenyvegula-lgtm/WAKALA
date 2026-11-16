@@ -27,6 +27,9 @@
   document.addEventListener('DOMContentLoaded',function(){ apply(t); });
 })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>WAKALA — Kitabu cha Mtaji | Goden Tech</title>
 
 <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
@@ -333,6 +336,326 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   .summary-grid{grid-template-columns:1fr}
   .actions{grid-template-columns:1fr}
 }
+
+/* =====================================================================
+   UBORESHAJI WA MUONEKANO — "DHAHABU"
+   Usiku mweusi + dhahabu, mistari nyembamba, herufi za kisasa-klasiki,
+   fomu za mstari wa chini. CSS tu — hakuna mantiki iliyobadilishwa.
+   ===================================================================== */
+:root{
+  --bg:#eceef4;--card:#ffffff;--surface:#ffffff;--soft:#f3f4f9;
+  --border:#e0e3ec;--border2:#c6cbdb;
+  --text:#0f1226;--muted:#586079;--faint:#939ab0;
+  --accent:#8f6708;--accent2:#6f5006;--accentbg:#f6ecd0;
+  --green:#0f7a52;--greenbg:#dcf3e8;
+  --red:#b3261e;--redbg:#fbe3e0;
+  --blue:#2f4fb3;--bluebg:#e2e8fa;
+  --amber:#8a5a00;--amberbg:#f8ebc9;
+  --track:#dfe2ec;--overlay:rgba(8,10,22,.62);
+  --gold:#d4af37;--gold2:#f1d98a;--ink:#0b0d1a;
+  --shadow:none;--shadow2:0 28px 50px -26px rgba(11,13,26,.55);
+  --toast-bg:#0b0d1a;--toast-text:#f1d98a;--dangerborder:rgba(179,38,30,.35);
+  --sidebar:#0b0d1a;--sidebar-text:#b4b8c9;--sidebar-active:rgba(212,175,55,.10);
+  --r:8px;
+  --serif:"Cormorant Garamond","Playfair Display",Georgia,"Times New Roman",serif;
+  --sans:Manrope,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+:root[data-theme="dark"]{
+  --bg:#06070c;--card:#0e1018;--surface:#0e1018;--soft:#151824;
+  --border:#1f2335;--border2:#2d3350;
+  --text:#f4f0e4;--muted:#a8a698;--faint:#706e64;
+  --accent:#e0bb5a;--accent2:#f1d98a;--accentbg:rgba(224,187,90,.11);
+  --green:#4fd6a0;--greenbg:rgba(79,214,160,.12);
+  --red:#ff8f86;--redbg:rgba(255,143,134,.12);
+  --blue:#8fa8ff;--bluebg:rgba(143,168,255,.12);
+  --amber:#f1c05c;--amberbg:rgba(241,192,92,.12);
+  --track:#1c2032;--overlay:rgba(0,0,0,.8);
+  --gold:#e0bb5a;--gold2:#f6e3a1;--ink:#0b0d1a;
+  --shadow:none;--shadow2:0 28px 50px -26px #000;
+  --toast-bg:#f1d98a;--toast-text:#0b0d1a;--dangerborder:rgba(255,143,134,.35);
+  --sidebar:#04050a;--sidebar-text:#9a9ca8;--sidebar-active:rgba(224,187,90,.10);
+}
+
+/* ---------- Msingi ---------- */
+body{font-family:var(--sans);background:var(--bg);font-feature-settings:"lnum" 1,"tnum" 1;letter-spacing:.005em}
+:root[data-theme="dark"] body{
+  background:radial-gradient(900px 480px at 50% -220px,rgba(224,187,90,.09),transparent 70%),var(--bg);
+  background-attachment:fixed;
+}
+::selection{background:var(--gold);color:#0b0d1a}
+.i{stroke-width:1.5}
+
+/* ---------- Topbar ---------- */
+.topbar{border-bottom:1px solid var(--border)}
+.brand-logo{
+  width:36px;height:36px;border-radius:50%;
+  background:#0b0d1a;color:var(--gold);border:1px solid var(--gold);
+  font-family:var(--serif);font-size:15px;font-weight:700;letter-spacing:.02em;
+}
+.brand h2{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.16em;line-height:1.05}
+.brand small{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.icon-btn{border:1px solid var(--border2);border-radius:50%;background:transparent;box-shadow:none}
+.icon-btn:hover{background:transparent;border-color:var(--gold);color:var(--accent)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.logout{color:var(--red)}
+.brand{flex:0 1 auto;min-width:0}
+.brand-logo{flex-shrink:0}
+.brand small{white-space:nowrap}
+/* Ikoni ya moto ya Gesi (inaundwa kabla CSS ya Gesi haijapakiwa, ilionekana nyeusi) */
+#gsTopBtn .gs-i,#gsNavItem .gs-i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ---------- Karibu ---------- */
+.welcome small{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:600}
+.welcome h2{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:-.005em}
+.day-badge{
+  background:transparent;border:1px solid var(--gold);color:var(--accent);
+  border-radius:2px;padding:6px 12px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+}
+
+/* ---------- Mtaji Mkuu (hero) ---------- */
+.hero{
+  border-radius:20px;padding:30px 26px 22px;color:#f4f0e4;
+  background:
+    radial-gradient(520px 260px at 100% 0%,rgba(212,175,55,.24),transparent 60%),
+    repeating-radial-gradient(circle at 100% 0%,transparent 0 22px,rgba(212,175,55,.07) 22px 23px),
+    linear-gradient(145deg,#0b0d1a 0%,#171b38 100%);
+  border:1px solid rgba(212,175,55,.45);
+  box-shadow:var(--shadow2),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.hero::before{background-image:none;-webkit-mask-image:none;mask-image:none}
+.hero::after{content:"";position:absolute;left:26px;right:26px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold2),transparent)}
+.hero-label{color:var(--gold2);font-size:10.5px;letter-spacing:.26em;font-weight:600}
+.hero-status{background:transparent;border:1px solid rgba(212,175,55,.6);color:var(--gold2);border-radius:2px;font-size:9.5px;letter-spacing:.16em}
+.hero-balance{
+  font-family:var(--serif);font-size:52px;font-weight:600;letter-spacing:-.01em;line-height:1.05;
+  background:linear-gradient(180deg,#fff3c4 0%,#d4af37 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+.hero-sub{color:rgba(244,240,228,.6);font-size:12.5px}
+.hero-actions{border-top:1px solid rgba(212,175,55,.25)}
+.hero-actions button{
+  background:transparent;border:1px solid rgba(212,175,55,.5);color:var(--gold2);
+  border-radius:2px;padding:9px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+}
+.hero-actions button:hover{background:rgba(212,175,55,.14)}
+.hero.lipa-hero{
+  background:
+    radial-gradient(520px 260px at 100% 0%,rgba(143,168,255,.26),transparent 60%),
+    repeating-radial-gradient(circle at 100% 0%,transparent 0 22px,rgba(212,175,55,.06) 22px 23px),
+    linear-gradient(145deg,#0b0d1a 0%,#1a2150 100%);
+}
+.mini-grid{border-top:1px solid rgba(212,175,55,.25)}
+.mini-box{background:transparent;border:1px solid rgba(212,175,55,.28);border-radius:6px}
+.mini-label{color:var(--gold2);opacity:.8;letter-spacing:.16em}
+.mini-value{font-family:var(--serif);font-size:22px;font-weight:700}
+
+/* ---------- Vichwa vya sehemu ---------- */
+.section{margin-top:34px}
+.section-title{gap:14px}
+.section-title h3{
+  flex:1;display:flex;align-items:center;gap:14px;
+  font-family:var(--serif);font-size:23px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--text);
+}
+.section-title h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.secondary-btn{
+  background:transparent;color:var(--accent);border:1px solid var(--gold);border-radius:2px;
+  padding:8px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+}
+.secondary-btn:hover{background:var(--gold);color:#0b0d1a}
+.section-title .secondary-btn{padding:8px 14px;font-size:11px}
+
+/* ---------- Vitufe ---------- */
+.primary-btn{
+  background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0b0d1a;
+  border:0;border-radius:2px;padding:14px 16px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+  box-shadow:none;
+}
+html:root[data-theme] .primary-btn{color:#0b0d1a}
+.primary-btn:hover{background:linear-gradient(180deg,var(--gold2),var(--gold));filter:brightness(1.07)}
+.mini-btn{width:32px;height:32px;border:1px solid var(--border2);border-radius:50%;background:transparent;color:var(--muted)}
+.mini-btn:hover{background:transparent;border-color:var(--gold);color:var(--accent)}
+.mini-btn.danger-btn{background:transparent;color:var(--red);border-color:var(--dangerborder)}
+.pdf-btn{border:1px solid var(--gold);background:transparent;color:var(--accent);border-radius:2px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.pdf-btn:hover{background:var(--gold);color:#0b0d1a}
+
+/* ---------- Fomu (mstari wa chini) ---------- */
+input,select,textarea{
+  border:0;border-bottom:1.5px solid var(--border2);border-radius:0;background-color:transparent;
+  padding:11px 2px;font-size:16px;box-shadow:none;
+}
+select{padding-right:26px;background-position:right 2px center}
+input:focus,select:focus,textarea:focus{border-bottom-color:var(--gold);box-shadow:0 1px 0 0 var(--gold)}
+.field label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.wk-sortbar{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em}
+.wk-sortbar select{padding:6px 26px 6px 2px;border-radius:0;text-transform:none;letter-spacing:0;font-size:13px}
+
+/* ---------- Kadi za muhtasari ---------- */
+.summary-card{
+  position:relative;background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  box-shadow:none;padding:20px 16px 16px;
+}
+.summary-card::before{content:"";position:absolute;left:16px;top:0;width:30px;height:2px;background:var(--gold)}
+.summary-card[class] .emoji{background:transparent;border:1px solid currentColor;border-radius:50%;width:36px;height:36px}
+.summary-card small{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.summary-card strong{font-family:var(--serif);font-size:25px;font-weight:700;letter-spacing:-.005em;line-height:1.1}
+.summary-card.s-total{background:linear-gradient(135deg,var(--accentbg),transparent 75%);border-color:var(--gold)}
+
+/* ---------- Mapanel na safu ---------- */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:none}
+.source-icon{width:40px;height:40px;border-radius:50%;background:transparent;border:1px solid var(--gold);color:var(--accent)}
+.source-name{font-weight:700}
+.source-balance{font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:0}
+.pending-text{font-family:var(--sans)}
+.list-amount{font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:0}
+.list-title{font-weight:700}
+.tag{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:2px;padding:3px 9px;font-size:9.5px;letter-spacing:.12em}
+.time-badge{background:var(--accentbg);color:var(--accent);border-radius:2px;letter-spacing:.06em}
+.empty-icon{width:54px;height:54px;border:1px dashed var(--gold);border-radius:50%;align-items:center;margin:0 auto 12px;color:var(--accent)}
+.empty-icon .i{width:22px;height:22px}
+
+/* ---------- Ukaguzi / progress ---------- */
+.progress-bar{height:8px;border-radius:0;background:var(--track)}
+.progress-fill{border-radius:0}
+.progress-info strong,#progressPercent{font-family:var(--serif);font-size:20px;font-weight:700}
+.closing-status{border:1px solid currentColor;border-radius:2px;font-size:11.5px;letter-spacing:.16em}
+.closing-row strong{font-weight:700}
+
+/* ---------- Vitendo vya haraka ---------- */
+.action-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:none}
+.action-btn:hover{background:var(--card);border-color:var(--gold)}
+.action-icon{border-radius:50%;background:transparent;border:1px solid currentColor}
+.action-btn strong{font-weight:700}
+
+/* ---------- Dirisha (modal) ---------- */
+.modal-box{border:1px solid var(--border2);border-top:2px solid var(--gold);border-radius:16px 16px 0 0;box-shadow:none}
+@media(min-width:640px){.modal-box{border-radius:10px;box-shadow:var(--shadow2)}}
+.modal-head h3{font-family:var(--serif);font-size:25px;font-weight:600}
+.close-btn{border:1px solid var(--border2);border-radius:50%;background:transparent;color:var(--muted)}
+.close-btn:hover{border-color:var(--gold);color:var(--accent);background:transparent}
+
+/* ---------- Toast na loader ---------- */
+.toast{border-radius:2px;border:1px solid var(--gold);letter-spacing:.02em}
+.loader-card{border:1px solid var(--gold);border-radius:6px}
+.spinner{border-top-color:var(--gold)}
+
+/* ---------- Menyu ya pembeni ---------- */
+.notebook-nav{background:linear-gradient(180deg,#0b0d1a 0%,#05060c 100%);border-right:1px solid rgba(212,175,55,.2)}
+.nav-terminal{width:38px;height:38px;border-radius:50%;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:var(--serif);font-size:14px}
+.nav-head h3{font-family:var(--serif);font-size:19px;letter-spacing:.16em}
+.nav-status{background:transparent;border:1px solid rgba(212,175,55,.2);border-radius:4px}
+.nav-section-label{color:rgba(212,175,55,.65);letter-spacing:.22em}
+.nav-item{border-radius:0;border-left:2px solid transparent}
+.nav-item:hover{background:var(--sidebar-active);color:#fff}
+.nav-item.active{background:rgba(212,175,55,.10);border-left-color:var(--gold);color:var(--gold2);box-shadow:none}
+.nav-logout{border-left-color:transparent}
+
+/* ---------- Ukurasa wa kuingia ---------- */
+.login-brand{
+  background:radial-gradient(640px 420px at 85% 8%,rgba(212,175,55,.22),transparent 60%),#07080f;
+}
+.login-brand::before{
+  background-image:repeating-radial-gradient(circle at 100% 0%,transparent 0 38px,rgba(212,175,55,.08) 38px 39px);
+  background-size:auto;-webkit-mask-image:none;mask-image:none;
+}
+.lb-mark{border-radius:50%;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:var(--serif);font-size:15px;width:42px;height:42px}
+.lb-logo{letter-spacing:.2em}
+.lb-copy h2{font-family:var(--serif);font-size:46px;font-weight:500;line-height:1.05;max-width:460px;color:#f4f0e4}
+.lb-copy p{color:rgba(244,240,228,.62)}
+.login-side{background:var(--bg)}
+.login-card .mark{
+  width:48px;height:48px;border-radius:50%;background:#0b0d1a;color:var(--gold);
+  border:1px solid var(--gold);font-family:var(--serif);font-size:16px;
+}
+.login-card h1{font-family:var(--serif);font-size:36px;font-weight:600;letter-spacing:0}
+.auth-switch button{color:var(--accent)}
+.secure-note{letter-spacing:.04em}
+#loginForm>p,#registerForm>p{color:var(--muted);margin:0 0 26px;font-size:14px}
+.login-card h1{margin-bottom:8px}
+
+/* ---------- Lipa ---------- */
+.lipa-bar{border-bottom:1px solid var(--border)}
+.lipa-bar-inner h3{font-family:var(--serif);font-size:23px;letter-spacing:.14em}
+.period-card{background:var(--card);border:1px solid var(--border);border-left:2px solid var(--gold);border-radius:var(--r);box-shadow:none}
+.period-label{letter-spacing:.16em}
+.period-value{font-family:var(--serif);font-size:34px;font-weight:600}
+
+/* ---------- Chini ya ukurasa ---------- */
+.app-footer{border-top:1px solid var(--border)}
+.app-footer span{color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-size:11px}
+
+/* =====================  GESI  =====================
+   Gesi inaongeza CSS yake baadaye; "html:root" inafanya hii ishinde. */
+html:root .gs-bar{border-bottom:1px solid var(--border)}
+html:root .gs-bar b{font-family:var(--serif);font-size:23px;letter-spacing:.16em}
+html:root .gs-ib{border:1px solid var(--border2);border-radius:50%;background:transparent}
+html:root .gs-nav{border-top:1px solid var(--border)}
+html:root .gs-nav button{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase}
+html:root .gs-nav button.on{color:var(--accent);box-shadow:inset 0 2px 0 var(--gold)}
+html:root .gs-hero{
+  border-radius:20px;padding:26px 22px 20px;color:#f4f0e4;
+  background:
+    radial-gradient(520px 260px at 100% 0%,rgba(212,175,55,.24),transparent 60%),
+    repeating-radial-gradient(circle at 100% 0%,transparent 0 22px,rgba(212,175,55,.07) 22px 23px),
+    linear-gradient(145deg,#0b0d1a 0%,#171b38 100%);
+  border:1px solid rgba(212,175,55,.45);box-shadow:var(--shadow2);
+}
+html:root .gs-hero small{color:var(--gold2);font-size:10.5px;letter-spacing:.24em}
+html:root .gs-hero .big{font-family:var(--serif);font-size:46px;font-weight:600;color:var(--gold2)}
+html:root .gs-hero .neg{color:#ff9a91}
+html:root .gs-card,html:root .gs-stat,html:root .gs-row{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:none;
+}
+html:root .gs-stat small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+html:root .gs-stat b{font-family:var(--serif);font-size:23px;font-weight:700}
+html:root .gs-ct b{font-family:var(--serif);font-size:20px;font-weight:700}
+html:root .gs-ra{font-family:var(--serif);font-size:18px}
+html:root .gs-ra small{font-family:var(--sans)}
+html:root .gs-pills span{background:transparent;border:1px solid var(--gold);color:var(--accent);border-radius:2px;letter-spacing:.04em}
+html:root .gs-sh h4{font-family:var(--serif);font-size:21px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--text)}
+html:root .gs-link{color:var(--accent);text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+html:root .gs-btn{
+  background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0b0d1a;border:0;border-radius:2px;
+  font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+}
+html:root:root[data-theme] .gs-btn{color:#0b0d1a}
+html:root .gs-btn.sec{background:transparent;border:1px solid var(--gold)}
+html:root:root[data-theme] .gs-btn.sec{color:var(--accent)}
+html:root .gs-chip{border:1px solid var(--border2);border-radius:2px;background:transparent;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+html:root .gs-chip.on,html:root:root[data-theme] .gs-chip.on{background:var(--gold);border-color:var(--gold);color:#0b0d1a}
+html:root .gs-seg{background:transparent;border:1px solid var(--border2);border-radius:2px;padding:3px}
+html:root .gs-seg button{border-radius:0}
+html:root .gs-seg button.on{background:var(--accentbg);color:var(--accent);box-shadow:inset 0 -2px 0 var(--gold)}
+html:root .gs-prev{background:var(--accentbg);border:1px solid var(--gold);border-radius:2px}
+html:root .gs-hint{background:var(--soft);border-left:2px solid var(--gold);border-radius:2px}
+html:root .gs-x{border:1px solid var(--border2);border-radius:50%;background:transparent}
+html:root .gs-sheet{border:1px solid var(--border2);border-top:2px solid var(--gold);border-radius:16px 16px 0 0}
+html:root .gs-mh h3{font-family:var(--serif);font-size:25px;font-weight:600}
+html:root .gs-toast{border:1px solid var(--gold);border-radius:2px}
+html:root .gs label,html:root .gs-modal label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+html:root .gs input,html:root .gs select,html:root .gs-modal input,html:root .gs-modal select{
+  border:0;border-bottom:1.5px solid var(--border2);border-radius:0;background-color:transparent;padding:11px 2px;font-size:16px;
+}
+html:root .gs input:focus,html:root .gs select:focus,html:root .gs-modal input:focus,html:root .gs-modal select:focus{
+  border-bottom-color:var(--gold);box-shadow:0 1px 0 0 var(--gold);
+}
+html:root .gs .gs-sort,html:root .gs-shr .gs-sort{padding:6px 4px;font-size:12px}
+
+/* ---------- Simu ndogo ---------- */
+@media(max-width:520px){
+  .brand{gap:9px}
+  .brand h2{font-size:18px;letter-spacing:.12em}
+  .brand small{font-size:8.5px;letter-spacing:.16em}
+  .brand-logo{width:34px;height:34px;font-size:13px}
+  .hero{padding:24px 20px 18px}
+  .hero-balance{font-size:40px}
+  .summary-card strong{font-size:21px}
+  .welcome h2{font-size:26px}
+  html:root .gs-hero .big{font-size:38px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
 </style>
 </head>
 
