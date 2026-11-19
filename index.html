@@ -209,6 +209,15 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .call-btn{color:var(--green);border-color:var(--green);background:var(--greenbg);text-decoration:none}
 .call-btn:hover{color:var(--green)}
 .sms-btn{color:var(--blue);border-color:var(--blue);background:var(--bluebg);text-decoration:none}
+.phone-row{display:flex;gap:8px;align-items:stretch}
+.phone-row input{flex:1;min-width:0}
+.contact-btn{flex-shrink:0;width:48px;border:1px solid var(--border2);background:var(--accentbg);color:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.contact-btn:hover{background:var(--soft)}
+.phone-choices{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.phone-choices:empty{display:none}
+.phone-choices button{border:1px solid var(--border2);background:var(--surface);color:var(--text);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;text-align:left}
+.phone-choices button:hover{background:var(--soft)}
+.phone-choices small{display:block;color:var(--muted);font-weight:500;font-size:11.5px;margin-bottom:2px}
 @media(max-width:520px){
   .debt-row{flex-wrap:wrap}
   .debt-row .source-info{flex:1 1 0}
@@ -388,6 +397,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></symbol>
   <symbol id="i-sms" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></symbol>
   <symbol id="i-call" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-contact" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
 </svg>
 
 <!-- AUTH -->
@@ -1481,10 +1491,54 @@ function sendDebtSms(id){
   window.location.href="sms:"+ph+"?body="+encodeURIComponent(body);
 }
 
+// Field ya namba ya simu: andika mwenyewe AU bonyeza kitufe kuchagua kwenye Contacts.
+// Contact Picker inafanya kazi kwenye Chrome ya Android (https). Kwingine, andika namba.
+let pendingTels=[];
+function phoneFieldHTML(inputId,value,nameId){
+  return `<div class="field"><label>Namba ya simu (si lazima)</label>
+    <div class="phone-row">
+      <input id="${inputId}" class="input" type="tel" inputmode="tel" value="${escapeHTML(value||"")}" placeholder="Andika namba au chagua Contacts">
+      <button type="button" class="contact-btn" title="Chagua kwenye Contacts" onclick="pickContact('${inputId}','${nameId}')">${ic("contact")}</button>
+    </div>
+    <div id="${inputId}Choices" class="phone-choices"></div></div>`;
+}
+async function pickContact(inputId,nameId){
+  if(!(navigator.contacts&&navigator.contacts.select)){
+    alert("Kivinjari hiki hakiruhusu kuchagua contact moja kwa moja.\nTumia Chrome ya Android (ukurasa uwe https), au andika namba mwenyewe.");
+    return;
+  }
+  try{
+    const res=await navigator.contacts.select(["name","tel"],{multiple:false});
+    if(!res||!res.length) return;
+    const c=res[0];
+    const tels=[...new Set((c.tel||[]).map(t=>String(t).replace(/[\s\-()]/g,"")).filter(Boolean))];
+    const nm=(c.name&&c.name[0])||"";
+    const nameEl=$(nameId);
+    if(nameEl&&!nameEl.value.trim()&&nm) nameEl.value=nm;
+    const box=$(inputId+"Choices");
+    if(box) box.innerHTML="";
+    if(!tels.length){toast("Contact hii haina namba.");return;}
+    $(inputId).value=tels[0];
+    if(tels.length>1&&box){
+      pendingTels=tels;
+      box.innerHTML=tels.map((t,i)=>`<button type="button" onclick="choosePhone('${inputId}',${i})"><small>${escapeHTML(nm||"Contact")}</small>${escapeHTML(t)}</button>`).join("");
+      toast("Contact ina namba zaidi ya moja. Chagua unayotaka.");
+    }
+  }catch(e){
+    if(e&&e.name==="AbortError") return;
+    alert("Imeshindikana kufungua Contacts: "+(e&&e.message?e.message:"ruhusa imekataliwa."));
+  }
+}
+function choosePhone(inputId,i){
+  if(pendingTels[i]) $(inputId).value=pendingTels[i];
+  const box=$(inputId+"Choices");
+  if(box) box.innerHTML="";
+}
+
 function addDebt(){
   openModal("Ongeza Deni",`
     <div class="field"><label>Jina la anayedaiwa</label><input id="debtName" class="input" placeholder="Mfano Juma Athumani"></div>
-    <div class="field"><label>Namba ya simu (si lazima)</label><input id="debtPhone" class="input" type="tel" inputmode="tel" placeholder="Mfano 0712345678"></div>
+    ${phoneFieldHTML("debtPhone","","debtName")}
     <div class="field"><label>Kiasi anachodaiwa</label><input id="debtAmount" class="input" type="number" min="1" placeholder="Mfano 15000"></div>
     <div class="field"><label>Maelezo (si lazima)</label><input id="debtNote" class="input" placeholder="Mfano Alitoa float bila cash"></div>
     <div class="field"><label>Tarehe</label><input id="debtDate" class="input" type="date" value="${today()}"></div>
@@ -1513,7 +1567,7 @@ function editDebt(id){
   if(!x) return;
   openModal("Rekebisha Deni",`
     <div class="field"><label>Jina la anayedaiwa</label><input id="editDebtName" class="input" value="${escapeHTML(x.name)}"></div>
-    <div class="field"><label>Namba ya simu (si lazima)</label><input id="editDebtPhone" class="input" type="tel" inputmode="tel" value="${escapeHTML(x.phone||"")}" placeholder="Mfano 0712345678"></div>
+    ${phoneFieldHTML("editDebtPhone",x.phone||"","editDebtName")}
     <div class="field"><label>Kiasi anachodaiwa</label><input id="editDebtAmount" class="input" type="number" min="1" value="${Number(x.amount||0)}"></div>
     <div class="field"><label>Maelezo (si lazima)</label><input id="editDebtNote" class="input" value="${escapeHTML(x.note||"")}"></div>
     <div class="field"><label>Tarehe</label><input id="editDebtDate" class="input" type="date" value="${x.date||today()}"></div>
