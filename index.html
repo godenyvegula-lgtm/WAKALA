@@ -209,6 +209,18 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .call-btn{color:var(--green);border-color:var(--green);background:var(--greenbg);text-decoration:none}
 .call-btn:hover{color:var(--green)}
 .sms-btn{color:var(--blue);border-color:var(--blue);background:var(--bluebg);text-decoration:none}
+@media(max-width:520px){
+  .debt-row{flex-wrap:wrap}
+  .debt-row .source-info{flex:1 1 0}
+  .debt-row .source-type{white-space:normal}
+  .debt-row .source-actions{width:100%;justify-content:flex-end;margin-left:0;padding-top:2px}
+}
+.summary-card[onclick]{cursor:pointer}
+.summary-card[onclick]:hover{border-color:var(--border2)}
+.subpage .lipa-body>.section:first-of-type{margin-top:4px}
+.pg-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--soft);padding:4px;border-radius:12px;margin-bottom:6px}
+.pg-tab{padding:10px;border-radius:9px;color:var(--muted);font-weight:700;font-size:13.5px}
+.pg-tab.on{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
 .sms-field textarea{min-height:110px;resize:vertical;line-height:1.5}
 .empty{padding:32px 14px;text-align:center;color:var(--muted);font-size:13px}
 .empty-icon{display:flex;justify-content:center;color:var(--faint);margin-bottom:8px}
@@ -463,11 +475,11 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
     <div class="nav-section-label">Vyanzo vya fedha</div>
     <div class="nav-list">
-      <button class="nav-item" onclick="goTo('networks',this)"><span class="nav-icon"><svg class="i"><use href="#i-phone"/></svg></span>Mitandao</button>
-      <button class="nav-item" onclick="goTo('banks',this)"><span class="nav-icon"><svg class="i"><use href="#i-bank"/></svg></span>Benki</button>
-      <button class="nav-item" onclick="goTo('cash',this)"><span class="nav-icon"><svg class="i"><use href="#i-cash"/></svg></span>Cash</button>
-      <button class="nav-item" onclick="goTo('debts',this)"><span class="nav-icon"><svg class="i"><use href="#i-file"/></svg></span>Madeni</button>
-      <button class="nav-item" onclick="goTo('otherSales',this)"><span class="nav-icon"><svg class="i"><use href="#i-wallet"/></svg></span>Mauzo Mengine</button>
+      <button class="nav-item" data-closable="1" onclick="openPage('networks')"><span class="nav-icon"><svg class="i"><use href="#i-phone"/></svg></span>Mitandao</button>
+      <button class="nav-item" data-closable="1" onclick="openPage('banks')"><span class="nav-icon"><svg class="i"><use href="#i-bank"/></svg></span>Benki</button>
+      <button class="nav-item" data-closable="1" onclick="openPage('cash')"><span class="nav-icon"><svg class="i"><use href="#i-cash"/></svg></span>Cash</button>
+      <button class="nav-item" data-closable="1" onclick="openPage('debts')"><span class="nav-icon"><svg class="i"><use href="#i-file"/></svg></span>Madeni</button>
+      <button class="nav-item" data-closable="1" onclick="openPage('sales')"><span class="nav-icon"><svg class="i"><use href="#i-wallet"/></svg></span>Mauzo Mengine</button>
     </div>
 
     <div class="nav-section-label">Miamala</div>
@@ -476,14 +488,14 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
       <button class="nav-item" onclick="closeNavigator();openIncrease('commission')"><span class="nav-icon"><svg class="i"><use href="#i-in"/></svg></span>Ongeza Commission</button>
       <button class="nav-item" onclick="closeNavigator();openIncrease('other')"><span class="nav-icon"><svg class="i"><use href="#i-plus"/></svg></span>Ongeza Mtaji</button>
       <button class="nav-item" onclick="closeNavigator();addDebt()"><span class="nav-icon"><svg class="i"><use href="#i-file"/></svg></span>Ongeza Deni</button>
-      <button class="nav-item" onclick="goTo('expenses',this)"><span class="nav-icon"><svg class="i"><use href="#i-list"/></svg></span>Matumizi</button>
-      <button class="nav-item" onclick="goTo('increases',this)"><span class="nav-icon"><svg class="i"><use href="#i-trend"/></svg></span>Ongezeko</button>
+      <button class="nav-item" onclick="openPage('miamala','expenses')"><span class="nav-icon"><svg class="i"><use href="#i-list"/></svg></span>Matumizi</button>
+      <button class="nav-item" onclick="openPage('miamala','increases')"><span class="nav-icon"><svg class="i"><use href="#i-trend"/></svg></span>Ongezeko</button>
     </div>
 
     <div class="nav-section-label">Hesabu</div>
     <div class="nav-list">
-      <button class="nav-item" onclick="goTo('closing',this)"><span class="nav-icon"><svg class="i"><use href="#i-lock"/></svg></span>Funga Hesabu</button>
-      <button class="nav-item" onclick="goTo('history',this)"><span class="nav-icon"><svg class="i"><use href="#i-calendar"/></svg></span>Historia ya Kufunga</button>
+      <button class="nav-item" onclick="openPage('hesabu')"><span class="nav-icon"><svg class="i"><use href="#i-lock"/></svg></span>Funga Hesabu</button>
+      <button class="nav-item" onclick="openPage('hesabu','history')"><span class="nav-icon"><svg class="i"><use href="#i-calendar"/></svg></span>Historia ya Kufunga</button>
       <button class="nav-item" onclick="closeNavigator();openLipa()"><span class="nav-icon"><svg class="i"><use href="#i-coin"/></svg></span>Lipa</button>
     </div>
 
@@ -518,10 +530,10 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <section id="summarySection" class="section">
       <div class="section-title"><h3>Muhtasari wa Fedha</h3></div>
       <div class="summary-grid">
-        <div class="summary-card s-cash"><div class="emoji"><svg class="i"><use href="#i-cash"/></svg></div><small>Cash</small><strong id="cashSummary">TSh 0</strong></div>
-        <div class="summary-card s-net"><div class="emoji"><svg class="i"><use href="#i-phone"/></svg></div><small>Mitandao</small><strong id="networkSummary">TSh 0</strong></div>
-        <div class="summary-card s-bank"><div class="emoji"><svg class="i"><use href="#i-bank"/></svg></div><small>Benki</small><strong id="bankSummary">TSh 0</strong></div>
-        <div class="summary-card s-debt"><div class="emoji"><svg class="i"><use href="#i-file"/></svg></div><small>Madeni</small><strong id="debtSummary">TSh 0</strong></div>
+        <div class="summary-card s-cash" onclick="openPage('cash')"><div class="emoji"><svg class="i"><use href="#i-cash"/></svg></div><small>Cash</small><strong id="cashSummary">TSh 0</strong></div>
+        <div class="summary-card s-net" onclick="openPage('networks')"><div class="emoji"><svg class="i"><use href="#i-phone"/></svg></div><small>Mitandao</small><strong id="networkSummary">TSh 0</strong></div>
+        <div class="summary-card s-bank" onclick="openPage('banks')"><div class="emoji"><svg class="i"><use href="#i-bank"/></svg></div><small>Benki</small><strong id="bankSummary">TSh 0</strong></div>
+        <div class="summary-card s-debt" onclick="openPage('debts')"><div class="emoji"><svg class="i"><use href="#i-file"/></svg></div><small>Madeni</small><strong id="debtSummary">TSh 0</strong></div>
         <div class="summary-card s-total wide"><div class="emoji"><svg class="i"><use href="#i-diamond"/></svg></div><div><small>Jumla huduma za kifedha (baada ya kutoa mauzo mengine)</small><strong id="totalSummary">TSh 0</strong></div></div>
       </div>
     </section>
@@ -533,6 +545,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
         <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
         <div id="progressCaption" class="progress-caption">Hesabu bado iko mbali na mtaji mkuu</div>
         <div class="closing-status status-bad" id="quickStatus">HAIJASAWAZISHWA</div>
+        <button id="quickCloseBtn" class="primary-btn" style="margin-top:12px" onclick="closeToday()"><svg class="i"><use href="#i-lock"/></svg>Funga Hesabu ya Leo</button>
       </div>
     </section>
 
@@ -549,62 +562,14 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     <!-- HALI YA HESABU BAADA YA KUFUNGA (inaonekana tu siku ikifungwa) -->
     <section id="closedSection" class="section hidden"></section>
 
-    <section id="networks" class="section">
-      <div class="section-title"><h3>Mitandao</h3><button class="secondary-btn" onclick="addNetwork()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div class="wk-sortbar" data-sort="networks"></div>
-      <div id="networksList" class="panel"></div>
-    </section>
 
-    <section id="banks" class="section">
-      <div class="section-title"><h3>Benki</h3><button class="secondary-btn" onclick="addBank()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div class="wk-sortbar" data-sort="banks"></div>
-      <div id="banksList" class="panel"></div>
-    </section>
 
-    <section id="cash" class="section">
-      <div class="section-title"><h3>Cash</h3><button class="secondary-btn" onclick="updateCashPrompt()"><svg class="i"><use href="#i-edit"/></svg>Rekebisha</button></div>
-      <div class="panel">
-        <div class="source-row">
-          <div class="source-icon"><svg class="i"><use href="#i-cash"/></svg></div>
-          <div class="source-info"><div class="source-name">Cash / Taslimu</div><div class="source-type">Fedha taslimu mkononi</div></div>
-          <div id="cashValue" class="source-balance">TSh 0</div>
-        </div>
-      </div>
-    </section>
 
-    <section id="debts" class="section">
-      <div class="section-title"><h3>Madeni</h3><button class="secondary-btn" onclick="addDebt()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div class="wk-sortbar" data-sort="debts"></div>
-      <div id="debtsList" class="panel"></div>
-    </section>
 
-    <section id="otherSales" class="section">
-      <div class="section-title"><h3>Mauzo Mengine</h3><button class="secondary-btn" onclick="openOtherSale()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div id="otherSalesPanel" class="panel"></div>
-    </section>
 
-    <section id="expenses" class="section">
-      <div class="section-title"><h3>Matumizi</h3><button class="secondary-btn" onclick="openExpense()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div class="wk-sortbar" data-sort="expenses"></div>
-      <div id="expensesList" class="panel"></div>
-    </section>
 
-    <section id="increases" class="section">
-      <div class="section-title"><h3>Ongezeko</h3><button class="secondary-btn" onclick="openIncrease('commission')"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
-      <div class="wk-sortbar" data-sort="increases"></div>
-      <div id="increasesList" class="panel"></div>
-    </section>
 
-    <section id="closing" class="section">
-      <div class="section-title"><h3>Funga Hesabu</h3><button class="secondary-btn" onclick="closeToday()"><svg class="i"><use href="#i-lock"/></svg>Funga Leo</button></div>
-      <div class="panel" id="closingPreview"></div>
-    </section>
 
-    <section id="history" class="section">
-      <div class="section-title"><h3>Historia ya Kufunga</h3></div>
-      <div class="wk-sortbar" data-sort="closings"></div>
-      <div id="closingsList" class="panel"></div>
-    </section>
   </main>
 
   <footer class="app-footer">
@@ -665,6 +630,112 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
     </section>
 
     <footer class="app-footer"><p><span>Goden Tech</span> — LIPA, sehemu huru ya faida na matumizi<br>© 2026 Goden Tech. Haki zote zimehifadhiwa.</p></footer>
+  </div>
+</div>
+
+<div id="pg-networks" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Mitandao<small>Float za mitandao ya simu</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="networks" class="section">
+      <div class="section-title"><h3>Mitandao</h3><button class="secondary-btn" onclick="addNetwork()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="networks"></div>
+      <div id="networksList" class="panel"></div>
+    </section>
+  </div>
+</div>
+<div id="pg-banks" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Benki<small>Akaunti za benki</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="banks" class="section">
+      <div class="section-title"><h3>Benki</h3><button class="secondary-btn" onclick="addBank()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="banks"></div>
+      <div id="banksList" class="panel"></div>
+    </section>
+  </div>
+</div>
+<div id="pg-cash" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Cash<small>Fedha taslimu mkononi</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="cash" class="section">
+      <div class="section-title"><h3>Cash</h3><button class="secondary-btn" onclick="updateCashPrompt()"><svg class="i"><use href="#i-edit"/></svg>Rekebisha</button></div>
+      <div class="panel">
+        <div class="source-row">
+          <div class="source-icon"><svg class="i"><use href="#i-cash"/></svg></div>
+          <div class="source-info"><div class="source-name">Cash / Taslimu</div><div class="source-type">Fedha taslimu mkononi</div></div>
+          <div id="cashValue" class="source-balance">TSh 0</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div id="pg-debts" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Madeni<small>Watu wanaokudai, simu na SMS</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="debts" class="section">
+      <div class="section-title"><h3>Madeni</h3><button class="secondary-btn" onclick="addDebt()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="debts"></div>
+      <div id="debtsList" class="panel"></div>
+    </section>
+  </div>
+</div>
+<div id="pg-sales" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Mauzo Mengine<small>Gas, Accessories na mengineyo</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="otherSales" class="section">
+      <div class="section-title"><h3>Mauzo Mengine</h3><button class="secondary-btn" onclick="openOtherSale()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div id="otherSalesPanel" class="panel"></div>
+    </section>
+  </div>
+</div>
+<div id="pg-miamala" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Miamala<small>Matumizi na Ongezeko</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <div class="pg-tabs"><button id="mtab-expenses" class="pg-tab on" onclick="miamalaTab('expenses')">Matumizi</button><button id="mtab-increases" class="pg-tab" onclick="miamalaTab('increases')">Ongezeko</button></div>
+    <section id="expenses" class="section">
+      <div class="section-title"><h3>Matumizi</h3><button class="secondary-btn" onclick="openExpense()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="expenses"></div>
+      <div id="expensesList" class="panel"></div>
+    </section>
+    <section id="increases" class="section hidden">
+      <div class="section-title"><h3>Ongezeko</h3><button class="secondary-btn" onclick="openIncrease('commission')"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div class="wk-sortbar" data-sort="increases"></div>
+      <div id="increasesList" class="panel"></div>
+    </section>
+  </div>
+</div>
+<div id="pg-hesabu" class="lipa-panel subpage hidden">
+  <div class="lipa-bar"><div class="lipa-bar-inner">
+    <button class="icon-btn" title="Rudi" onclick="closePage()"><svg class="i"><use href="#i-back"/></svg></button>
+    <h3>Hesabu<small>Funga hesabu na historia ya kufunga</small></h3>
+  </div></div>
+  <div class="lipa-body">
+    <section id="closing" class="section">
+      <div class="section-title"><h3>Funga Hesabu</h3><button class="secondary-btn" onclick="closeToday()"><svg class="i"><use href="#i-lock"/></svg>Funga Leo</button></div>
+      <div class="panel" id="closingPreview"></div>
+    </section>
+    <section id="history" class="section">
+      <div class="section-title"><h3>Historia ya Kufunga</h3></div>
+      <div class="wk-sortbar" data-sort="closings"></div>
+      <div id="closingsList" class="panel"></div>
+    </section>
   </div>
 </div>
 
@@ -1091,6 +1162,9 @@ function renderClosedState(){
   const c=state.closings.find(x=>x.date===today());
   const closed=!!c;
   ["networks","banks","cash","debts","otherSales"].forEach(id=>$(id).classList.toggle("hidden",closed));
+  document.querySelectorAll(".nav-item[data-closable]").forEach(b=>b.classList.toggle("hidden",closed));
+  $("quickCloseBtn").classList.toggle("hidden",closed);
+  if(closed&&CLOSABLE_PAGES.includes(curPage)) closePage();
   const box=$("closedSection");
   box.classList.toggle("hidden",!closed);
   if(!closed){box.innerHTML="";return;}
@@ -1327,12 +1401,18 @@ async function removeBank(id){
 }
 
 /* ================= CASH ================= */
+// Inafungua modal (kama Mitandao na Benki) yenye field ya kiasi na kitufe cha Hifadhi.
 function updateCashPrompt(){
-  const value=prompt("Weka kiasi cha Cash/Taslimu:",state.cashPending?"":state.cash);
-  if(value===null) return;
-  const amount=Number(value);
+  openModal("Rekebisha Cash",`
+    <div class="field"><label>Cash / Taslimu</label><input id="editCashAmount" class="input" type="number" min="0" inputmode="numeric" value="${state.cashPending?"":Number(state.cash||0)}" placeholder="Ingiza hesabu ya leo"></div>
+    <button class="primary-btn" onclick="saveCashEdit()">Hifadhi Mabadiliko</button>`);
+}
+
+async function saveCashEdit(){
+  const amount=Number($("editCashAmount").value||0);
   if(!Number.isFinite(amount)||amount<0){alert("Kiasi si sahihi.");return;}
-  updateCash(amount);
+  closeModal();
+  await updateCash(amount);
 }
 
 async function updateCash(value){
@@ -1364,7 +1444,7 @@ function renderDebts(){
     const call=ph?`<a class="mini-btn call-btn" href="tel:${ph}" title="Piga simu">${ic("call")}</a>`
       +`<button class="mini-btn sms-btn" onclick="openDebtSms('${x.id}')" title="Tuma SMS">${ic("sms")}</button>`:"";
     return `
-    <div class="source-row">
+    <div class="source-row debt-row">
       <div class="source-icon">${ic("file")}</div>
       <div class="source-info"><div class="source-name">${escapeHTML(x.name)}</div><div class="source-type">${type}</div></div>
       <div class="source-balance">${fmt(x.amount)}</div>
@@ -1936,6 +2016,7 @@ function renderClosingPDF(c){
 // Data yake: lipaEntries (faida/matumizi) na lipaClosings (historia ya miezi).
 function openLipa(){
   closeNavigator();
+  closePage();
   $("lipaScreen").classList.remove("hidden");
   $("lipaScreen").scrollTop=0;
   document.body.style.overflow="hidden";
@@ -2230,11 +2311,52 @@ $("modal").addEventListener("click",function(e){if(e.target===this) closeModal()
 function toggleNavigator(){$("notebookNav").classList.toggle("open");$("navOverlay").classList.toggle("show");}
 function closeNavigator(){$("notebookNav").classList.remove("open");$("navOverlay").classList.remove("show");}
 
+/* ---- Kurasa (navigator) ---- */
+const CLOSABLE_PAGES=["networks","banks","cash","debts","sales"];
+let curPage=null;
+function isTodayClosed(){return state.closings.some(x=>x.date===today());}
+function openPage(name,sub){
+  const el=$("pg-"+name);
+  if(!el) return;
+  if(CLOSABLE_PAGES.includes(name)&&isTodayClosed()){toast("Hesabu ya leo imefungwa.");return;}
+  closeNavigator();
+  closeLipaScreen();
+  if(window.Gesi&&Gesi.close) Gesi.close();
+  closeModal();
+  document.querySelectorAll(".subpage").forEach(x=>x.classList.add("hidden"));
+  document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
+  if(name==="miamala") miamalaTab(sub||"expenses");
+  el.classList.remove("hidden");
+  el.scrollTop=0;
+  document.body.style.overflow="hidden";
+  try{
+    if(curPage===null) history.pushState({pg:name},"");
+    else history.replaceState({pg:name},"");
+  }catch(e){}
+  curPage=name;
+  if(name==="hesabu"&&sub==="history") setTimeout(()=>$("history").scrollIntoView({block:"start"}),60);
+}
+function closePage(fromPop){
+  if(curPage===null) return;
+  document.querySelectorAll(".subpage").forEach(x=>x.classList.add("hidden"));
+  document.body.style.overflow="";
+  curPage=null;
+  try{ if(!fromPop&&history.state&&history.state.pg) history.back(); }catch(e){}
+}
+function miamalaTab(w){
+  $("expenses").classList.toggle("hidden",w!=="expenses");
+  $("increases").classList.toggle("hidden",w!=="increases");
+  $("mtab-expenses").classList.toggle("on",w==="expenses");
+  $("mtab-increases").classList.toggle("on",w==="increases");
+}
+window.addEventListener("popstate",()=>{if(curPage!==null) closePage(true);});
+
 function goTo(id,btn){
   const el=$(id);
   if(!el) return;
   closeNavigator();
   closeLipaScreen();
+  closePage();
   document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
   if(btn) btn.classList.add("active");
   setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),150);
@@ -2251,6 +2373,7 @@ auth.onAuthStateChanged(async user=>{
     currentUser=null;
     stopAutoCloseWatcher();
     closeLipaScreen();
+    closePage();
     closeNavigator();
     document.querySelectorAll(".modal").forEach(m=>m.classList.add("hidden"));
     $("loginPassword").value="";
@@ -2261,7 +2384,11 @@ auth.onAuthStateChanged(async user=>{
 
 /* ================= KEYS ================= */
 document.addEventListener("keydown",function(e){
-  if(e.key==="Escape"){closeModal();closeNavigator();}
+  if(e.key==="Escape"){
+    const mOpen=!$("modal").classList.contains("hidden");
+    closeModal();closeNavigator();
+    if(!mOpen) closePage();
+  }
 });
 $("loginPassword").addEventListener("keydown",e=>{if(e.key==="Enter") login();});
 </script>
@@ -2471,6 +2598,7 @@ async function open(){
   build();
   if(typeof closeNavigator==='function')closeNavigator();
   if(typeof closeLipaScreen==='function')closeLipaScreen();
+  if(typeof closePage==='function')closePage();
   $('gsScreen').classList.remove('gs-hide');
   document.body.style.overflow='hidden';
   if(!loaded)await load();else render();
