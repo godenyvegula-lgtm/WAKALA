@@ -218,6 +218,17 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .phone-choices button{border:1px solid var(--border2);background:var(--surface);color:var(--text);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600;text-align:left}
 .phone-choices button:hover{background:var(--soft)}
 .phone-choices small{display:block;color:var(--muted);font-weight:500;font-size:11.5px;margin-bottom:2px}
+.due-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;margin-top:5px}
+.due-late{background:var(--redbg);color:var(--red)}
+.due-soon{background:var(--amberbg);color:var(--amber)}
+.due-ok{background:var(--bluebg);color:var(--blue)}
+.debt-row.late{box-shadow:inset 3px 0 0 var(--red)}
+.debt-row.paid{opacity:.85}
+.wa-btn{color:var(--accent);border-color:var(--accent);background:var(--accentbg)}
+.pay-btn{color:var(--amber);border-color:var(--amber);background:var(--amberbg)}
+.debt-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.debt-bar .summary-card{padding:12px 14px}
+#debtSearch{margin-bottom:10px}
 @media(max-width:520px){
   .debt-row{flex-wrap:wrap}
   .debt-row .source-info{flex:1 1 0}
@@ -398,6 +409,7 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <symbol id="i-sms" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></symbol>
   <symbol id="i-call" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
   <symbol id="i-contact" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5A8.5 8.5 0 1 1 21 11.5z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-1.9-1.3-2.300-2.300l.8-1-1-2z"/></symbol>
 </svg>
 
 <!-- AUTH -->
@@ -695,6 +707,8 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
   <div class="lipa-body">
     <section id="debts" class="section">
       <div class="section-title"><h3>Madeni</h3><button class="secondary-btn" onclick="addDebt()"><svg class="i"><use href="#i-plus"/></svg>Ongeza</button></div>
+      <div id="debtsBar" class="debt-bar"></div>
+      <input id="debtSearch" class="input" type="search" placeholder="Tafuta kwa jina, namba au maelezo..." oninput="ui.debtQ=this.value;renderDebts()">
       <div class="wk-sortbar" data-sort="debts"></div>
       <div id="debtsList" class="panel"></div>
     </section>
@@ -786,7 +800,7 @@ let state={initialized:false,mainCapital:0,networks:[],banks:[],cash:0,cashPendi
   lipa:{loaded:false,periodStart:"",entries:[],closings:[]}};
 let currentUser=null;
 let autoCloseTimer=null;
-let ui={increaseType:"commission",autoClosing:false};
+let ui={increaseType:"commission",autoClosing:false,debtQ:"",showPaidDebts:false};
 
 /* ================= HELPERS ================= */
 const $=id=>document.getElementById(id);
@@ -1034,7 +1048,7 @@ function buildClosingData(date,automatic){
     debtsTotal:Number(t.debts),
     networksSnapshot:state.networks.map(n=>({id:n.id,name:n.name,balance:Number(n.balance||0)})),
     banksSnapshot:state.banks.map(b=>({id:b.id,name:b.name,balance:Number(b.balance||0)})),
-    debtsSnapshot:state.debts.map(x=>({id:x.id,name:x.name,amount:Number(x.amount||0)})),
+    debtsSnapshot:state.debts.filter(x=>!x.paid).map(x=>({id:x.id,name:x.name,amount:Number(x.amount||0)})),
     expensesToday:state.expenses.filter(e=>e.date===date).map(e=>({
       amount:Number(e.amount||0),description:e.description||"",source:e.source||"",sourceName:e.sourceName||""})),
     increasesToday:state.increases.filter(i=>i.date===date).map(i=>({
@@ -1101,7 +1115,8 @@ const SORTS={
     ["big","Kiasi kikubwa kwanza",(a,b)=>_n(b.amount)-_n(a.amount)],
     ["small","Kiasi kidogo kwanza",(a,b)=>_n(a.amount)-_n(b.amount)],
     ["new","Tarehe (mpya kwanza)",(a,b)=>_d(b.date,a.date)||_t(b)-_t(a)],
-    ["old","Tarehe (zamani kwanza)",(a,b)=>_d(a.date,b.date)||_t(a)-_t(b)]
+    ["old","Tarehe (zamani kwanza)",(a,b)=>_d(a.date,b.date)||_t(a)-_t(b)],
+    ["due","Tarehe ya kulipa (iliyokaribia kwanza)",(a,b)=>_d(a.dueDate||"9999-12-31",b.dueDate||"9999-12-31")]
   ],
   expenses:_byMove,
   increases:_byMove,
@@ -1438,57 +1453,40 @@ async function updateCash(value){
 }
 
 /* ================= DEBTS ================= */
-// Deni ni kiasi anachodaiwa mteja na wakala. Kinahesabiwa kwenye "Jumla Iliyopo".
-// Kila deni linaweza kuwa na namba ya simu; kitufe cha kijani kinapiga simu moja kwa moja.
-function renderDebts(){
-  const el=$("debtsList");
-  if(!state.debts.length){
-    el.innerHTML=emptyBlock("file","Hakuna deni lililohifadhiwa.<br>Bonyeza <b>Ongeza</b> kuanza.");
-    return;
-  }
-  el.innerHTML=sortList("debts",state.debts).map(x=>{
-    const ph=cleanPhone(x.phone);
-    const type=(x.date?escapeHTML(formatDateSwahili(x.date)):"Deni")
-      +(x.phone?" · "+escapeHTML(x.phone):"")
-      +(x.note?" · "+escapeHTML(x.note):"");
-    const call=ph?`<a class="mini-btn call-btn" href="tel:${ph}" title="Piga simu">${ic("call")}</a>`
-      +`<button class="mini-btn sms-btn" onclick="openDebtSms('${x.id}')" title="Tuma SMS">${ic("sms")}</button>`:"";
-    return `
-    <div class="source-row debt-row">
-      <div class="source-icon">${ic("file")}</div>
-      <div class="source-info"><div class="source-name">${escapeHTML(x.name)}</div><div class="source-type">${type}</div></div>
-      <div class="source-balance">${fmt(x.amount)}</div>
-      <div class="source-actions">
-        ${call}
-        <button class="mini-btn" onclick="editDebt('${x.id}')" title="Rekebisha">${ic("edit")}</button>
-        <button class="mini-btn danger-btn" onclick="removeDebt('${x.id}')" title="Futa">${ic("trash")}</button>
-      </div>
-    </div>`;
-  }).join("");
-}
+// "amount" ni KIASI KILICHOBAKI (ndicho kinachohesabiwa kwenye Jumla Iliyopo).
+// Malipo ya sehemu yanahifadhiwa kwenye "payments"; deni likifika sifuri linawekwa paid:true.
+// Namba za simu zinasafishwa kuwa +255..., na dueDate inaonyesha madeni yaliyochelewa.
 
-// SMS ya kukumbusha deni: inafungua app ya SMS ya simu (Google/Samsung Messages)
-// ikiwa na namba na ujumbe tayari; unabonyeza Send hapo tu.
-function openDebtSms(id){
-  const x=state.debts.find(d=>d.id===id);
-  if(!x) return;
-  const ph=cleanPhone(x.phone);
-  if(!ph){alert("Deni hili halina namba ya simu.");return;}
-  const text="Habari "+x.name+", nakukumbusha deni lako la "+fmt(x.amount)+". Tafadhali lipa mapema. Asante.";
-  openModal("SMS kwa "+x.name,`
-    <div class="field"><label>Namba</label><input class="input" value="${escapeHTML(x.phone)}" readonly></div>
-    <div class="field sms-field"><label>Ujumbe</label><textarea id="smsText">${escapeHTML(text)}</textarea></div>
-    <button class="primary-btn" onclick="sendDebtSms('${id}')">${ic("sms")}Tuma SMS</button>
-    <div class="list-meta" style="margin-top:10px;text-align:center">Itafungua app yako ya SMS ikiwa na ujumbe tayari. Bonyeza Send hapo.</div>`);
+/* ---- Namba ya simu ---- */
+function normPhone(raw){
+  let p=String(raw||"").replace(/[^\d+]/g,"");
+  if(!p) return "";
+  if(p.startsWith("+")) return "+"+p.slice(1).replace(/\+/g,"");
+  p=p.replace(/\+/g,"");
+  if(p.startsWith("00")) return "+"+p.slice(2);
+  if(p.startsWith("255")&&p.length===12) return "+"+p;
+  if(p.startsWith("0")&&p.length===10) return "+255"+p.slice(1);
+  if(p.length===9&&/^[67]/.test(p)) return "+255"+p;
+  return p;
 }
-function sendDebtSms(id){
-  const x=state.debts.find(d=>d.id===id);
-  if(!x) return;
-  const ph=cleanPhone(x.phone);
-  const body=$("smsText").value.trim();
-  if(!body){alert("Andika ujumbe.");return;}
-  closeModal();
-  window.location.href="sms:"+ph+"?body="+encodeURIComponent(body);
+function phoneIssue(p){
+  if(!p) return "";
+  if(p.startsWith("+255")) return p.length===13?"":"Namba ya Tanzania inatakiwa kuwa na tarakimu 9 baada ya +255 (mfano +255712345678).";
+  if(p.startsWith("+")) return p.length>=9?"":"Namba inaonekana fupi mno.";
+  return "Namba haina msimbo wa nchi na haionekani kuwa ya kawaida (mfano 0712345678).";
+}
+const phoneKey=s=>String(s||"").replace(/\D/g,"").replace(/^(255|0)/,"");
+function findDebtByPhone(phone,exceptId){
+  if(!phone) return null;
+  const k=phoneKey(phone);
+  return state.debts.find(d=>!d.paid&&d.id!==exceptId&&d.phone&&phoneKey(d.phone)===k)||null;
+}
+function checkPhoneBeforeSave(phone,exceptId){
+  const issue=phoneIssue(phone);
+  if(issue&&!confirm(issue+"\n\nUnataka kuhifadhi namba hii hivyo hivyo?")) return false;
+  const dup=findDebtByPhone(phone,exceptId);
+  if(dup&&!confirm("Namba hii tayari ina deni la "+dup.name+" ("+fmt(dup.amount)+").\n\nUnataka kuendelea kuhifadhi?")) return false;
+  return true;
 }
 
 // Field ya namba ya simu: andika mwenyewe AU bonyeza kitufe kuchagua kwenye Contacts.
@@ -1497,7 +1495,7 @@ let pendingTels=[];
 function phoneFieldHTML(inputId,value,nameId){
   return `<div class="field"><label>Namba ya simu (si lazima)</label>
     <div class="phone-row">
-      <input id="${inputId}" class="input" type="tel" inputmode="tel" value="${escapeHTML(value||"")}" placeholder="Andika namba au chagua Contacts">
+      <input id="${inputId}" class="input" type="tel" inputmode="tel" value="${escapeHTML(value||"")}" placeholder="Andika namba au chagua Contacts" onblur="this.value=normPhone(this.value)">
       <button type="button" class="contact-btn" title="Chagua kwenye Contacts" onclick="pickContact('${inputId}','${nameId}')">${ic("contact")}</button>
     </div>
     <div id="${inputId}Choices" class="phone-choices"></div></div>`;
@@ -1511,7 +1509,7 @@ async function pickContact(inputId,nameId){
     const res=await navigator.contacts.select(["name","tel"],{multiple:false});
     if(!res||!res.length) return;
     const c=res[0];
-    const tels=[...new Set((c.tel||[]).map(t=>String(t).replace(/[\s\-()]/g,"")).filter(Boolean))];
+    const tels=[...new Set((c.tel||[]).map(normPhone).filter(Boolean))];
     const nm=(c.name&&c.name[0])||"";
     const nameEl=$(nameId);
     if(nameEl&&!nameEl.value.trim()&&nm) nameEl.value=nm;
@@ -1535,27 +1533,160 @@ function choosePhone(inputId,i){
   if(box) box.innerHTML="";
 }
 
+/* ---- Tarehe ya kulipa ---- */
+function daysBetween(fromIso,toIso){
+  return Math.round((new Date(toIso+"T12:00:00")-new Date(fromIso+"T12:00:00"))/86400000);
+}
+function dueInfo(x){
+  if(!x.dueDate||x.paid) return null;
+  const d=daysBetween(today(),x.dueDate);
+  if(d<0) return {cls:"due-late",late:true,text:"Limechelewa siku "+(-d)};
+  if(d===0) return {cls:"due-soon",late:false,text:"Linaisha leo"};
+  if(d===1) return {cls:"due-soon",late:false,text:"Linaisha kesho"};
+  if(d<=3) return {cls:"due-soon",late:false,text:"Siku "+d+" zimebaki"};
+  return {cls:"due-ok",late:false,text:"Kulipa: "+formatDateSwahili(x.dueDate)};
+}
+function debtPaidSum(x){return (x.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0);}
+
+/* ---- Orodha ---- */
+function renderDebtsBar(active){
+  const el=$("debtsBar");
+  if(!el) return;
+  const t=today();
+  const late=active.filter(x=>x.dueDate&&x.dueDate<t);
+  const sum=l=>l.reduce((s,x)=>s+Number(x.amount||0),0);
+  el.innerHTML=`
+    <div class="summary-card"><small>Yanayodaiwa (${active.length})</small><strong>${fmt(sum(active))}</strong></div>
+    <div class="summary-card"><small>Yaliyochelewa (${late.length})</small><strong style="color:${late.length?"var(--red)":"inherit"}">${fmt(sum(late))}</strong></div>`;
+}
+
+function debtRowActive(x){
+  const ph=cleanPhone(x.phone);
+  const paidSum=debtPaidSum(x);
+  const orig=Number(x.originalAmount||0)||(Number(x.amount||0)+paidSum);
+  const due=dueInfo(x);
+  const type=(x.date?escapeHTML(formatDateSwahili(x.date)):"Deni")
+    +(x.phone?" · "+escapeHTML(x.phone):"")
+    +(x.note?" · "+escapeHTML(x.note):"");
+  const extra=(paidSum>0?`<div class="source-type">Amelipa ${fmt(paidSum)} kati ya ${fmt(orig)}</div>`:"")
+    +(due?`<div><span class="due-badge ${due.cls}">${ic("clock",11)}${due.text}</span></div>`:"");
+  const contact=ph?`<a class="mini-btn call-btn" href="tel:${ph}" title="Piga simu">${ic("call")}</a>`
+    +`<button class="mini-btn sms-btn" onclick="openDebtSms('${x.id}','sms')" title="Tuma SMS">${ic("sms")}</button>`
+    +`<button class="mini-btn wa-btn" onclick="openDebtSms('${x.id}','wa')" title="Tuma WhatsApp">${ic("wa")}</button>`:"";
+  return `
+    <div class="source-row debt-row${due&&due.late?" late":""}">
+      <div class="source-icon">${ic("file")}</div>
+      <div class="source-info"><div class="source-name">${escapeHTML(x.name)}</div><div class="source-type">${type}</div>${extra}</div>
+      <div class="source-balance">${fmt(x.amount)}</div>
+      <div class="source-actions">
+        ${contact}
+        <button class="mini-btn pay-btn" onclick="openDebtPay('${x.id}')" title="Malipo">${ic("coin")}</button>
+        <button class="mini-btn" onclick="editDebt('${x.id}')" title="Rekebisha">${ic("edit")}</button>
+        <button class="mini-btn danger-btn" onclick="removeDebt('${x.id}')" title="Futa">${ic("trash")}</button>
+      </div>
+    </div>`;
+}
+
+function debtRowPaid(x){
+  const paidSum=debtPaidSum(x);
+  const orig=Number(x.originalAmount||0)||paidSum;
+  return `
+    <div class="source-row debt-row paid">
+      <div class="source-icon">${ic("check")}</div>
+      <div class="source-info"><div class="source-name">${escapeHTML(x.name)}</div><div class="source-type">Limelipwa${x.paidAt?" · "+escapeHTML(formatDateSwahili(x.paidAt)):""}${x.phone?" · "+escapeHTML(x.phone):""}</div></div>
+      <div class="source-balance" style="color:var(--green)">${fmt(orig)}</div>
+      <div class="source-actions">
+        <button class="mini-btn" onclick="openDebtPay('${x.id}')" title="Historia ya malipo">${ic("list")}</button>
+        <button class="mini-btn danger-btn" onclick="removeDebt('${x.id}')" title="Futa">${ic("trash")}</button>
+      </div>
+    </div>`;
+}
+
+function renderDebts(){
+  const el=$("debtsList");
+  const active=state.debts.filter(x=>!x.paid);
+  const paidList=state.debts.filter(x=>x.paid);
+  renderDebtsBar(active);
+  if(!state.debts.length){
+    el.innerHTML=emptyBlock("file","Hakuna deni lililohifadhiwa.<br>Bonyeza <b>Ongeza</b> kuanza.");
+    return;
+  }
+  const q=String(ui.debtQ||"").trim().toLowerCase();
+  const match=x=>!q
+    ||String(x.name||"").toLowerCase().includes(q)
+    ||String(x.note||"").toLowerCase().includes(q)
+    ||String(x.phone||"").toLowerCase().includes(q)
+    ||(phoneKey(q).length>=3&&phoneKey(x.phone).includes(phoneKey(q)));
+  const shown=sortList("debts",active.filter(match));
+  let html=shown.length
+    ?shown.map(debtRowActive).join("")
+    :emptyBlock("file",q?"Hakuna deni linalolingana na utafutaji.":"Hakuna deni linalodaiwa kwa sasa.");
+  if(paidList.length){
+    html+=`<div class="source-row" style="justify-content:center"><button class="secondary-btn" onclick="toggleDebtPaid()">${ui.showPaidDebts?"Ficha":"Onesha"} yaliyolipwa (${paidList.length})</button></div>`;
+    if(ui.showPaidDebts) html+=paidList.filter(match).sort((a,b)=>_d(b.paidAt,a.paidAt)).map(debtRowPaid).join("");
+  }
+  el.innerHTML=html;
+}
+function toggleDebtPaid(){ui.showPaidDebts=!ui.showPaidDebts;renderDebts();}
+
+/* ---- SMS / WhatsApp ---- */
+function debtMsgText(x){
+  const late=x.dueDate&&x.dueDate<today();
+  return "Habari "+x.name+", nakukumbusha deni lako la "+fmt(x.amount)
+    +(x.dueDate?" ambalo "+(late?"lilipaswa":"linapaswa")+" kulipwa tarehe "+formatDateSwahili(x.dueDate):"")
+    +". Tafadhali lipa mapema. Asante.";
+}
+function openDebtSms(id,ch){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
+  if(!cleanPhone(x.phone)){alert("Deni hili halina namba ya simu.");return;}
+  const wa=ch==="wa";
+  openModal((wa?"WhatsApp kwa ":"SMS kwa ")+x.name,`
+    <div class="field"><label>Namba</label><input class="input" value="${escapeHTML(x.phone)}" readonly></div>
+    <div class="field sms-field"><label>Ujumbe</label><textarea id="smsText">${escapeHTML(debtMsgText(x))}</textarea></div>
+    <button class="primary-btn" onclick="sendDebtMsg('${id}','${wa?"wa":"sms"}')">${ic(wa?"wa":"sms")}${wa?"Tuma WhatsApp":"Tuma SMS"}</button>
+    <div class="list-meta" style="margin-top:10px;text-align:center">${wa?"Itafungua WhatsApp ikiwa na ujumbe tayari. Bonyeza Send hapo.":"Itafungua app yako ya SMS ikiwa na ujumbe tayari. Bonyeza Send hapo."}</div>`);
+}
+function sendDebtMsg(id,ch){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
+  const body=$("smsText").value.trim();
+  if(!body){alert("Andika ujumbe.");return;}
+  closeModal();
+  if(ch==="wa"){
+    const url="https://wa.me/"+normPhone(x.phone).replace(/\D/g,"")+"?text="+encodeURIComponent(body);
+    if(!window.open(url,"_blank")) window.location.href=url;
+  }else{
+    window.location.href="sms:"+cleanPhone(x.phone)+"?body="+encodeURIComponent(body);
+  }
+}
+
+/* ---- Ongeza / Rekebisha / Futa ---- */
 function addDebt(){
   openModal("Ongeza Deni",`
     <div class="field"><label>Jina la anayedaiwa</label><input id="debtName" class="input" placeholder="Mfano Juma Athumani"></div>
     ${phoneFieldHTML("debtPhone","","debtName")}
     <div class="field"><label>Kiasi anachodaiwa</label><input id="debtAmount" class="input" type="number" min="1" placeholder="Mfano 15000"></div>
     <div class="field"><label>Maelezo (si lazima)</label><input id="debtNote" class="input" placeholder="Mfano Alitoa float bila cash"></div>
-    <div class="field"><label>Tarehe</label><input id="debtDate" class="input" type="date" value="${today()}"></div>
+    <div class="field"><label>Tarehe ya deni</label><input id="debtDate" class="input" type="date" value="${today()}"></div>
+    <div class="field"><label>Tarehe ya kulipa (si lazima)</label><input id="debtDue" class="input" type="date"></div>
     <button class="primary-btn" onclick="saveDebt()">Hifadhi Deni</button>`);
 }
 
 async function saveDebt(){
   const name=$("debtName").value.trim();
-  const phone=$("debtPhone").value.trim();
+  const phone=normPhone($("debtPhone").value);
   const amount=Number($("debtAmount").value||0);
   const note=$("debtNote").value.trim();
   const date=$("debtDate").value||today();
+  const dueDate=$("debtDue").value||"";
   if(!name){alert("Weka jina la anayedaiwa.");return;}
   if(!amount||amount<=0){alert("Weka kiasi sahihi cha deni.");return;}
+  if(dueDate&&dueDate<date){alert("Tarehe ya kulipa haiwezi kuwa kabla ya tarehe ya deni.");return;}
+  if(!checkPhoneBeforeSave(phone,null)) return;
   showLoading();
   try{
-    await collectionRef("debts").add({name:name,phone:phone,amount:amount,note:note,date:date,createdAt:TS()});
+    await collectionRef("debts").add({name:name,phone:phone,amount:amount,originalAmount:amount,payments:[],paid:false,note:note,date:date,dueDate:dueDate,createdAt:TS()});
     closeModal();await loadData();toast("Deni limeongezwa.");
   }catch(error){
     alert("Imeshindikana kuhifadhi: "+errorMessage(error));
@@ -1565,26 +1696,36 @@ async function saveDebt(){
 function editDebt(id){
   const x=state.debts.find(d=>d.id===id);
   if(!x) return;
+  const paidSum=debtPaidSum(x);
   openModal("Rekebisha Deni",`
     <div class="field"><label>Jina la anayedaiwa</label><input id="editDebtName" class="input" value="${escapeHTML(x.name)}"></div>
     ${phoneFieldHTML("editDebtPhone",x.phone||"","editDebtName")}
-    <div class="field"><label>Kiasi anachodaiwa</label><input id="editDebtAmount" class="input" type="number" min="1" value="${Number(x.amount||0)}"></div>
+    <div class="field"><label>${paidSum>0?"Kiasi kilichobaki (amelipa "+fmt(paidSum)+")":"Kiasi anachodaiwa"}</label><input id="editDebtAmount" class="input" type="number" min="1" value="${Number(x.amount||0)}"></div>
     <div class="field"><label>Maelezo (si lazima)</label><input id="editDebtNote" class="input" value="${escapeHTML(x.note||"")}"></div>
-    <div class="field"><label>Tarehe</label><input id="editDebtDate" class="input" type="date" value="${x.date||today()}"></div>
+    <div class="field"><label>Tarehe ya deni</label><input id="editDebtDate" class="input" type="date" value="${x.date||today()}"></div>
+    <div class="field"><label>Tarehe ya kulipa (si lazima)</label><input id="editDebtDue" class="input" type="date" value="${x.dueDate||""}"></div>
     <button class="primary-btn" onclick="saveDebtEdit('${id}')">Hifadhi Mabadiliko</button>`);
 }
 
 async function saveDebtEdit(id){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
   const name=$("editDebtName").value.trim();
-  const phone=$("editDebtPhone").value.trim();
+  const phone=normPhone($("editDebtPhone").value);
   const amount=Number($("editDebtAmount").value||0);
   const note=$("editDebtNote").value.trim();
   const date=$("editDebtDate").value||today();
+  const dueDate=$("editDebtDue").value||"";
   if(!name){alert("Jina haliwezi kuwa tupu.");return;}
   if(!amount||amount<=0){alert("Weka kiasi sahihi cha deni.");return;}
+  if(dueDate&&dueDate<date){alert("Tarehe ya kulipa haiwezi kuwa kabla ya tarehe ya deni.");return;}
+  if(!checkPhoneBeforeSave(phone,id)) return;
   showLoading();
   try{
-    await collectionRef("debts").doc(id).set({name:name,phone:phone,amount:amount,note:note,date:date,updatedAt:TS()},{merge:true});
+    await collectionRef("debts").doc(id).set({
+      name:name,phone:phone,amount:amount,originalAmount:amount+debtPaidSum(x),
+      note:note,date:date,dueDate:dueDate,updatedAt:TS()
+    },{merge:true});
     closeModal();await loadData();toast("Deni limebadilishwa.");
   }catch(error){
     alert("Imeshindikana: "+errorMessage(error));
@@ -1594,13 +1735,97 @@ async function saveDebtEdit(id){
 async function removeDebt(id){
   const x=state.debts.find(d=>d.id===id);
   if(!x) return;
-  if(!confirm("Una uhakika unataka kufuta deni la "+x.name+" ("+fmt(x.amount)+")?")) return;
+  if(!confirm("Una uhakika unataka kufuta deni la "+x.name+" ("+fmt(x.paid?(x.originalAmount||0):x.amount)+") pamoja na historia yake ya malipo?")) return;
   showLoading();
   try{
     await collectionRef("debts").doc(id).delete();
     await loadData();toast("Deni limefutwa.");
   }catch(error){
     alert("Imeshindikana kufuta: "+errorMessage(error));
+  }finally{hideLoading();}
+}
+
+/* ---- Malipo ya sehemu ---- */
+function openDebtPay(id){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
+  const paidSum=debtPaidSum(x);
+  const rem=Number(x.amount||0);
+  const orig=Number(x.originalAmount||0)||(rem+paidSum);
+  const rows=(x.payments||[]).map((p,i)=>({p:p,i:i})).sort((a,b)=>_d(b.p.date,a.p.date)||_d(b.p.time,a.p.time));
+  const hist=rows.length?rows.map(r=>`
+    <div class="closing-row" style="align-items:center">
+      <span>${escapeHTML(formatDateSwahili(r.p.date))} ${escapeHTML(r.p.time||"")}${r.p.note?" · "+escapeHTML(r.p.note):""}</span>
+      <span style="display:flex;gap:8px;align-items:center"><strong class="amount-in">+${fmt(r.p.amount)}</strong>
+        <button class="mini-btn danger-btn" onclick="removeDebtPayment('${id}',${r.i})" title="Futa malipo">${ic("trash")}</button></span>
+    </div>`).join(""):`<div class="list-meta" style="padding:6px 0">Hakuna malipo yaliyorekodiwa bado.</div>`;
+  const form=x.paid
+    ?`<div class="closing-status status-ok" style="margin-top:14px">DENI LIMELIPWA KIKAMILIFU</div>`
+    :`<div class="field" style="margin-top:14px"><label>Kiasi anacholipa sasa</label>
+        <div class="phone-row"><input id="debtPayAmount" class="input" type="number" min="1" max="${rem}" inputmode="numeric" placeholder="Mfano 5000">
+        <button type="button" class="secondary-btn" onclick="document.getElementById('debtPayAmount').value=${rem}">Lote</button></div></div>
+      <div class="field"><label>Tarehe</label><input id="debtPayDate" class="input" type="date" value="${today()}"></div>
+      <div class="field"><label>Maelezo (si lazima)</label><input id="debtPayNote" class="input" placeholder="Mfano Alilipa kwa M-Pesa"></div>
+      <button class="primary-btn" onclick="saveDebtPayment('${id}')">Hifadhi Malipo</button>
+      <div class="list-meta" style="margin-top:10px;text-align:center">Kumbuka kuongeza pesa uliyopokea kwenye Cash, Mtandao au Benki ili Jumla Iliyopo isipungue.</div>`;
+  openModal("Malipo — "+x.name,`
+    <div class="closing-card" style="padding:0 0 4px">
+      <div class="closing-row"><span>Deni la awali</span><strong>${fmt(orig)}</strong></div>
+      <div class="closing-row"><span>Amelipa jumla</span><strong class="amount-in">${fmt(paidSum)}</strong></div>
+      <div class="closing-row"><span>Kilichobaki</span><strong style="color:${rem>0?"var(--red)":"var(--green)"}">${fmt(rem)}</strong></div>
+    </div>
+    <div class="section-title" style="margin:14px 0 4px"><h3>Historia ya malipo</h3></div>${hist}${form}`);
+}
+
+async function saveDebtPayment(id){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
+  const amt=Number($("debtPayAmount").value||0);
+  const date=$("debtPayDate").value||today();
+  const note=$("debtPayNote").value.trim();
+  const rem=Number(x.amount||0);
+  if(!amt||amt<=0){alert("Weka kiasi sahihi cha malipo.");return;}
+  if(amt>rem){alert("Kiasi kinazidi deni lililobaki ("+fmt(rem)+").");return;}
+  const newRem=rem-amt;
+  const done=newRem<0.01;
+  const upd={
+    payments:[...(x.payments||[]),{amount:amt,date:date,time:nowTime(),note:note}],
+    amount:done?0:newRem,
+    originalAmount:Number(x.originalAmount||0)||(rem+debtPaidSum(x)),
+    paid:done,
+    updatedAt:TS()
+  };
+  if(done) upd.paidAt=date;
+  showLoading();
+  try{
+    await collectionRef("debts").doc(id).set(upd,{merge:true});
+    closeModal();await loadData();
+    toast(done?"Deni limelipwa lote.":"Malipo yamehifadhiwa. Baki: "+fmt(newRem));
+  }catch(error){
+    alert("Imeshindikana kuhifadhi: "+errorMessage(error));
+  }finally{hideLoading();}
+}
+
+async function removeDebtPayment(id,i){
+  const x=state.debts.find(d=>d.id===id);
+  if(!x) return;
+  const p=(x.payments||[])[i];
+  if(!p) return;
+  if(!confirm("Futa malipo ya "+fmt(p.amount)+" ya tarehe "+formatDateSwahili(p.date)+"?\nKiasi hicho kitarudi kwenye deni.")) return;
+  showLoading();
+  try{
+    await collectionRef("debts").doc(id).set({
+      payments:(x.payments||[]).filter((_,k)=>k!==i),
+      amount:Number(x.amount||0)+Number(p.amount||0),
+      paid:false,
+      paidAt:firebase.firestore.FieldValue.delete(),
+      updatedAt:TS()
+    },{merge:true});
+    await loadData();
+    openDebtPay(id);
+    toast("Malipo yamefutwa.");
+  }catch(error){
+    alert("Imeshindikana: "+errorMessage(error));
   }finally{hideLoading();}
 }
 
